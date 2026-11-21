@@ -27,6 +27,7 @@ export const users = pgTable("users", {
   id: id(),
   identityIssuer: text("identity_issuer").notNull(),
   identitySubject: text("identity_subject").notNull(),
+  homeBusinessId: uuid("home_business_id").references(() => businesses.id),
 }, (t) => [
   unique().on(t.identityIssuer, t.identitySubject),
 ]).enableRLS();
