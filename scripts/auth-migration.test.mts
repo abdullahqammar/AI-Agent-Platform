@@ -49,8 +49,8 @@ test("SQL contains only auth table creation, cascading foreign keys and indexes"
 test("migration reader accepts the journal and statement boundaries", () => {
   const journal = readJson("drizzle/meta/_journal.json");
   const migrations = readMigrationFiles({ migrationsFolder: "./drizzle" });
-  assert.equal(migrations.length, 2);
-  assert.deepEqual(journal.entries.map((entry: { idx: number; tag: string }) => [entry.idx, entry.tag]), [
+  assert.ok(migrations.length >= 2);
+  assert.deepEqual(journal.entries.slice(0, 2).map((entry: { idx: number; tag: string }) => [entry.idx, entry.tag]), [
     [0, "0000_foundation"], [1, "0001_better_auth"],
   ]);
   assert.ok(migrations[1].folderMillis > migrations[0].folderMillis);

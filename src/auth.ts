@@ -26,6 +26,9 @@ export const auth = betterAuth({
   appName: "AgentFlow",
   baseURL,
   secret,
+  advanced: {
+    useSecureCookies: process.env.NODE_ENV === "production",
+  },
   database: drizzleAdapter(db, {
     provider: "pg",
     schema: authSchema,

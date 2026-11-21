@@ -1,0 +1,35 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { onboarding } from "@/lib/validation";
+import { verifiedSession, workspaceStore, readWorkspace } from "@/lib/workspace";
+import { TenantAccessDenied } from "@/db";
+
+export async function POST(request: Request) {
+  if (request.headers.get("origin") !== new URL(process.env.BETTER_AUTH_URL!).origin) {
+    return NextResponse.json({ error: "Request origin rejected." }, { status: 403 });
+  }
+  const session = await verifiedSession();
+  if (!session) return NextResponse.json({ error: "Sign in to continue." }, { status: 401 });
+  let input;
+  try { input = onboarding.safeParse(await request.json()); }
+  catch { return NextResponse.json({ error: "Send a valid workspace form." }, { status: 400 }); }
+  if (!input.success) return NextResponse.json({ error: input.error.issues[0].message }, { status: 400 });
+  try {
+    const businessId = await workspaceStore().onboard(session.user.id, input.data);
+    return NextResponse.json({ businessId });
+  } catch {
+    return NextResponse.json({ error: "Workspace creation failed. Please retry." }, { status: 500 });
+  }
+}
+
+export async function GET(request: Request) {
+  const session = await verifiedSession();
+  if (!session) return NextResponse.json({ error: "Sign in to continue." }, { status: 401 });
+  const id = z.uuid().safeParse(new URL(request.url).searchParams.get("businessId"));
+  if (!id.success) return NextResponse.json({ error: "Invalid workspace." }, { status: 400 });
+  try { return NextResponse.json(await readWorkspace(session.user.id, id.data)); }
+  catch (error) {
+    if (error instanceof TenantAccessDenied) return NextResponse.json({ error: "Workspace unavailable." }, { status: 403 });
+    return NextResponse.json({ error: "Unable to load workspace." }, { status: 500 });
+  }
+}
