@@ -29,6 +29,13 @@
       "when": 1795360498629,
       "tag": "0003_workspace_membership_discovery",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795372493659,
+      "tag": "0004_assistant_studio",
+      "breakpoints": true
     }
   ]
 }

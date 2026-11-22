@@ -78,3 +78,11 @@ nav a,nav > span { display: flex; align-items: center; gap: 11px; padding: 10px 
   .workspace-body { padding: 28px 20px; } .workspace-main header { min-height: 60px; padding: 14px 20px; } .workspace-details { gap: 25px; }
 }
 
+
+.assistant-studio { margin: auto; max-width: 54rem; padding: 2rem 1rem; }
+.assistant-studio nav { display: flex; flex-wrap: wrap; gap: 1rem; }
+.assistant-studio fieldset, .assistant-studio section { margin: 1rem 0; padding: 1rem; border: 1px solid #bdc6d6; border-radius: .5rem; }
+.assistant-studio label { display: block; margin: .65rem 0; text-transform: capitalize; }
+.assistant-studio textarea, .assistant-studio input:not([type=checkbox]), .assistant-studio select { display: block; width: 100%; border: 1px solid #8491a6; padding: .5rem; background: white; }
+.assistant-studio button { margin: .3rem; padding: .5rem .8rem; background: #25375b; color: white; border-radius: .3rem; }
+.assistant-studio button:disabled { opacity: .5; }

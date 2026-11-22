@@ -92,6 +92,8 @@ export const locations = pgTable("business_locations", {
 ]).enableRLS();
 
 export const agents = pgTable("agents", {
+  publishedVersion: integer("published_version"),
+  testedVersion: integer("tested_version"),
   id: id(),
   businessId: businessId(),
   createdAt: createdAt(),
@@ -213,6 +215,9 @@ export const customerIdentities = pgTable("customer_identities", {
 ]).enableRLS();
 
 export const conversations = pgTable("conversations", {
+  agentVersion: integer("agent_version"),
+  needsHuman: boolean("needs_human").notNull().default(false),
+  testMode: boolean("test_mode").notNull().default(false),
   id: id(),
   businessId: businessId(),
   createdAt: createdAt(),
@@ -237,6 +242,7 @@ export const conversations = pgTable("conversations", {
 ]).enableRLS();
 
 export const messages = pgTable("messages", {
+  usage: jsonb("usage"),
   id: id(),
   businessId: businessId(),
   createdAt: createdAt(),

@@ -109,3 +109,6 @@ At the end of every milestone, report:
 - The single highest-priority next task.
 
 Do not report a milestone as complete while a required acceptance check remains unverified.
+
+Follow docs/AGENTFLOW_MASTER_PRODUCT_BLUEPRINT.md and the handbook for product direction. Prioritize the configurable AI Business Assistant alongside workspace invitations. Prove the full local conversation flow and explicitly report provider acceptance. Before each commit and push verify cwd, repository root, branch and fetch/push destination. Commit completed AgentFlow milestones and verify the pushed revision. OnPlas is reference only.
+Follow docs/AI_BUSINESS_ASSISTANT.md for the first-agent acceptance criteria and docs/AGENTFLOW_DOCUMENTATION_UPDATE_PROTOCOL.md when recording milestones.

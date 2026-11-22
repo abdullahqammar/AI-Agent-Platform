@@ -1,0 +1,5 @@
+# Execution boundaries
+
+Better Auth supplies the subject. withTenant resolves active membership and operation permission in a transaction with PostgreSQL RLS context. See database.md for schema and migration details. The studio additionally requires an Owner role. Agent IDs, versions and thread IDs supplied by the browser are resolved under that context.
+
+The model endpoint and model allowlist are server-controlled. System constraints take precedence over configuration. Versioned assigned sources and conversation text enter the model as untrusted user data. The only model-requested action supported is flagging the current conversation for staff if explicitly enabled. Staff must undertake any real-world action. Credentials stay server-side. Model failure and staff requests are audited; successful replies record usage. A model request currently holds a short-lived transaction with a 15-second network timeout. Production work includes durable request deduplication, quotas, recovery and spend controls.
