@@ -28,7 +28,9 @@ test("Better Auth endpoints persist and invalidate local PostgreSQL sessions", a
   }
 
   function rememberCookies(response: Response) {
-    cookie = response.headers.getSetCookie().map((value) => value.split(";")[0]).join("; ");
+    const cookies = response.headers.getSetCookie();
+    assert.ok(cookies.some(value => /HttpOnly/i.test(value) && /SameSite=Lax/i.test(value)), "Session cookie has HttpOnly and SameSite protection");
+    cookie = cookies.map((value) => value.split(";")[0]).join("; ");
     assert.ok(Boolean(cookie), "Authentication cookie issued");
   }
 

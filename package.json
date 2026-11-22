@@ -9,7 +9,10 @@
     "lint": "eslint",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node scripts/migrate.mts",
-    "db:test": "node --test scripts/database.test.mts"
+    "db:test": "node --test scripts/database.test.mts scripts/migration-state.test.mts",
+    "test:auth": "node --test scripts/auth-runtime.test.mts",
+    "test:workspace": "node --test scripts/workspace-runtime.test.mts",
+    "test:migrations": "node --test scripts/auth-migration.test.mts scripts/migration-state.test.mts"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "^1.7.27",

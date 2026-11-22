@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AgentFlow
 
-## Getting Started
+AgentFlow is a configurable business-assistant workspace built with Next.js App Router, Better Auth, Drizzle and PostgreSQL. The current milestone provides registration, login, first-business onboarding, owner authorization and an authenticated workspace.
 
-First, run the development server:
+## Local setup
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Use Node.js 24 and npm. Install dependencies with `npm ci`.
+
+The ignored root `.env.local` must contain `DATABASE_URL`, `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL`. The database connection is deliberately restricted to local `agentflow_dev` as `agentflow_app`. Generate the authentication secret locally and keep it private. Set the development auth URL to `http://localhost:3000`.
+
+Review pending migration SQL, then run:
+
+```sh
+npm run db:migrate
+npm run dev -- --hostname localhost
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [AgentFlow locally](http://localhost:3000). Register an account, create a business with its timezone and initial location, and enter the dashboard. Sign out and sign in again to return to the same workspace.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Checks
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Run these checks against the local development database:
 
-## Learn More
+```sh
+npm run db:test
+npm run test:migrations
+npx tsc --noEmit
+npm run lint
+npm run build
+```
 
-To learn more about Next.js, take a look at the following resources:
+With the development server running on localhost port 3000, run the HTTP integration suites:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```sh
+npm run test:auth
+npm run test:workspace
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The suites create disposable test users and workspaces, exercise actual endpoints and PostgreSQL, then remove their own fixtures. Passwords and session cookies stay in memory. The workspace suite covers concurrent identity creation and onboarding, retries, rollback, owner permissions, anonymous access and cross-business access attempts.
 
-## Deploy on Vercel
+Generate schema changes with `npm run db:generate -- --name=<change>`. Review SQL before running migrations. Keep applied migration files immutable. Generation and journal checks are offline operations. Runtime database checks require the local configuration.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Architecture
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See [database architecture](docs/database.md) for identity mapping, the onboarding transaction, permission definitions, RLS boundaries, migration behavior and production preparation.
+
+The current UI contains Overview and clearly unavailable navigation for upcoming modules. Agent management, WhatsApp connections, inbox workflows and business editing are future milestones.
+
+Production preparation requires HTTPS, production-specific database access configuration, separate migration/runtime roles, shared rate-limit storage for multiple instances, email and account recovery configuration, an account lifecycle policy, and backup/restore procedures. The local environment is the only configured database target.
