@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { randomBytes, randomUUID } from "node:crypto";
 import { test } from "node:test";
 import { drizzle } from "drizzle-orm/postgres-js";
+import { respondToInvitation, tokenDigest } from "../src/db/invitations.ts";
 import { createConnection } from "../src/db/connection.ts";
 import { createFirstWorkspace, workspaceDatabase, identityIssuer } from "../src/db/workspace.ts";
 import { permissions } from "../src/db/permissions.ts";
@@ -187,6 +188,30 @@ test("authenticated workspace onboarding and tenant isolation", async (t) => {
       user.cookie = response.headers.getSetCookie().map(value => value.split(";")[0]).join("; ");
       assert.equal((await request("/api/workspace?businessId=" + user.business, user)).status, 200);
     });
+    await t.test("invitations require the correct recipient, tenant, live token and pending status", async () => {
+      const business = users[0].business;
+      const recipient = { id: users[1].subject, email: users[1].email, name: "Invited user" };
+      const token = randomBytes(32).toString("hex");
+      async function seed(status: string, expires: Date) {
+        await client.begin(async tx => {
+          await tx`select set_config('agentflow.business_id', ${business}, true)`;
+          await tx`insert into workspace_invitations(business_id,email,role,token_hash,status,expires_at)
+            values(${business},${recipient.email},'Viewer',${tokenDigest(token)},${status},${expires.toISOString()})
+            on conflict(business_id,email) do update set status=excluded.status,expires_at=excluded.expires_at`;
+        });
+      }
+      const future = new Date(Date.now() + 60000);
+      await seed("pending", new Date(Date.now() - 60000));
+      assert.equal(await respondToInvitation(client,business,token,recipient,true),false);
+      await seed("revoked",future);
+      assert.equal(await respondToInvitation(client,business,token,recipient,true),false);
+      await seed("pending",future);
+      assert.equal(await respondToInvitation(client,users[1].business,token,recipient,true),false);
+      assert.equal(await respondToInvitation(client,business,token,{...recipient,email:users[0].email},true),false);
+      assert.equal(await respondToInvitation(client,business,token,recipient,false),true);
+      assert.equal(await respondToInvitation(client,business,token,recipient,true),false);
+      assert.equal((await request("/api/workspace?businessId="+business,users[1])).status,403);
+    });
   } finally {
     try {
       for (const user of users) {
@@ -197,7 +222,7 @@ test("authenticated workspace onboarding and tenant isolation", async (t) => {
           for (const business of owned) {
             await tx`SELECT set_config('agentflow.business_id', ${business}, true)`;
             await tx`UPDATE users SET home_business_id=null WHERE identity_subject=${user.subject} AND identity_issuer=${identityIssuer}`;
-            for (const table of ["audit_events", "business_memberships", "role_permissions", "business_locations", "roles"]) {
+            for (const table of ["workspace_invitations", "audit_events", "business_memberships", "role_permissions", "business_locations", "roles"]) {
               await tx.unsafe('DELETE FROM "' + table + '" WHERE business_id=$1', [business]);
             }
             await tx`DELETE FROM businesses WHERE id=${business}`;

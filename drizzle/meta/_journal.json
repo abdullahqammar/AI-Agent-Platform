@@ -36,6 +36,13 @@
       "when": 1795372493659,
       "tag": "0004_assistant_studio",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795377331703,
+      "tag": "0005_team_invitations",
+      "breakpoints": true
     }
   ]
 }

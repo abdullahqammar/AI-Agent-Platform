@@ -7,8 +7,9 @@ import { withTenant, TenantAccessDenied } from "@/db";
 import { permissions } from "@/db/permissions";
 
 type Context = Parameters<Parameters<typeof withTenant>[2]>[0];
-export async function asOwner<T>(
+export async function withWorkspaceRoles<T>(
   businessId: string,
+  roles: string[],
   operation: (ctx: Context) => Promise<T>,
 ) {
   const session = await verifiedSession();
@@ -23,9 +24,23 @@ export async function asOwner<T>(
     async (ctx) => {
       const [owner] = await ctx.tx
         .execute(sql`select 1 from business_memberships m join roles r on r.id=m.role_id and r.business_id=m.business_id
-      where m.id=${ctx.membershipId} and m.business_id=${businessId} and m.active and r.name='Owner'`);
+      where m.id=${ctx.membershipId} and m.business_id=${businessId} and m.active and r.name in (${sql.join(
+        roles.map((role) => sql`${role}`),
+        sql`,`,
+      )})`);
       if (!owner) throw new TenantAccessDenied();
       return operation(ctx);
     },
+  );
+}
+
+export function asAssistantManager<T>(
+  business: string,
+  operation: (ctx: Context) => Promise<T>,
+) {
+  return withWorkspaceRoles(
+    business,
+    ["Owner", "Assistant manager"],
+    operation,
   );
 }

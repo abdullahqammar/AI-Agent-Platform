@@ -63,6 +63,7 @@ export const rolePermissions = pgTable("role_permissions", {
 ]).enableRLS();
 
 export const memberships = pgTable("business_memberships", {
+  displayName: text("display_name"),
   id: id(),
   businessId: businessId(),
   createdAt: createdAt(),
@@ -393,4 +394,19 @@ export const auditEvents = pgTable("audit_events", {
     columns: [t.businessId, t.membershipId],
     foreignColumns: [memberships.businessId, memberships.id],
   }),
+]).enableRLS();
+
+export const workspaceInvitations = pgTable("workspace_invitations", {
+  id: id(),
+  businessId: businessId(),
+  createdAt: createdAt(),
+  email: text("email").notNull(),
+  role: text("role").notNull(),
+  tokenHash: text("token_hash").notNull(),
+  expiresAt: instant("expires_at").notNull(),
+  status: text("status").notNull().default("pending"),
+}, t => [
+  unique().on(t.businessId, t.email),
+  check("invitation_role", sql`${t.role} in ('Viewer','Assistant manager')`),
+  check("invitation_status", sql`${t.status} in ('pending','accepted','declined','revoked')`),
 ]).enableRLS();

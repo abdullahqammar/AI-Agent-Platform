@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { assistantConfig } from "@/lib/assistant/config";
 import { generateAnswer } from "@/lib/assistant/provider";
-import { asOwner } from "./store";
+import { asAssistantManager } from "./store";
 
 export async function act(business: string, form: FormData) {
   const action = z
@@ -13,7 +13,7 @@ export async function act(business: string, form: FormData) {
   let agent = z.uuid().nullable().parse(form.get("agent"));
   let thread = z.uuid().nullable().parse(form.get("thread"));
   let notice = "";
-  await asOwner(business, async ({ tx, membershipId }) => {
+  await asAssistantManager(business, async ({ tx, membershipId }) => {
     const audit = (event: string, target: string) =>
       tx.execute(sql`insert into audit_events(business_id,membership_id,action,target_id)
       values(${business},${membershipId},${event},${target})`);

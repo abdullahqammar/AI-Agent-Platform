@@ -1,0 +1,67 @@
+"""Local-only team acceptance. Creates synthetic users and workspaces."""
+import secrets
+from playwright.sync_api import expect, sync_playwright
+
+def register(page, name, email):
+    page.goto('http://localhost:3000/register')
+    for field, value in [('name', name), ('email', email), ('password', secrets.token_hex(16))]:
+        page.locator(f'input[name={field}]:visible').fill(value)
+    page.get_by_role('button', name='Create account').click()
+    page.wait_for_url('**/onboarding')
+
+with sync_playwright() as pw:
+    browser = pw.chromium.launch(executable_path='/usr/bin/chromium', args=['--no-sandbox'])
+    for width, height in [(1440, 900), (390, 844)]:
+        owner = browser.new_page(viewport={'width': width, 'height': height})
+        member = browser.new_page(viewport={'width': width, 'height': height})
+        email = f'invited-{secrets.token_hex(8)}@example.test'
+        register(owner, 'Team owner', f'owner-{secrets.token_hex(8)}@example.test')
+        owner.locator('[name=businessName]').fill('Team sample')
+        owner.locator('[name=locationName]').fill('Team office')
+        owner.locator('select').select_option('UTC')
+        owner.get_by_role('button', name='Create workspace').click()
+        owner.get_by_role('link', name='Team', exact=True).click()
+        owner.get_by_label('Recipient email').fill(email)
+        owner.get_by_label('Invitation role').select_option('Assistant manager')
+        owner.get_by_role('button', name='Create invitation link').click()
+        link = owner.get_by_label('Private invitation link').input_value()
+        team = owner.url
+        member.goto(link)
+        expect(member.get_by_role('link', name='Register')).to_be_visible()
+        register(member, 'Team member', email)
+        owner.get_by_label('Recipient email').fill(email)
+        owner.get_by_label('Invitation role').select_option('Assistant manager')
+        owner.get_by_role('button', name='Create invitation link').click()
+        expect(owner.get_by_label('Private invitation link')).not_to_have_value(link)
+        old_link, link = link, owner.get_by_label('Private invitation link').input_value()
+        member.goto(old_link)
+        member.get_by_role('button', name='Accept invitation').click()
+        expect(member.get_by_role('status')).to_contain_text('unavailable')
+        member.goto(link)
+        member.get_by_role('button', name='Accept invitation').click()
+        member.wait_for_url('**/dashboard?businessId=*')
+        member.get_by_role('link', name='AI assistants').click()
+        expect(member.get_by_role('heading', name='Business assistants')).to_be_visible()
+        studio = member.url
+        member.goto(link)
+        member.get_by_role('button', name='Accept invitation').click()
+        expect(member.get_by_role('status')).to_contain_text('unavailable')
+        owner.reload()
+        owner.get_by_label('Member role').select_option('Viewer')
+        owner.get_by_role('button', name='Save role').click()
+        expect(owner.get_by_text('Viewer · Active')).to_be_visible()
+        member.goto(studio)
+        expect(member.get_by_text('404', exact=True)).to_be_visible()
+        member.goto(team)
+        expect(member.get_by_text('Team member (you)')).to_be_visible()
+        expect(member.get_by_label('Recipient email')).to_have_count(0)
+        assert owner.evaluate('document.documentElement.scrollWidth <= innerWidth')
+        owner.get_by_label('Confirm access removal').check()
+        owner.get_by_role('button', name='Revoke access').click()
+        expect(owner.get_by_text('Viewer · Revoked')).to_be_visible()
+        member.reload()
+        expect(member.get_by_text('404', exact=True)).to_be_visible()
+        owner.close()
+        member.close()
+        print(f'{width}x{height}: team lifecycle passed')
+    browser.close()

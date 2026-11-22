@@ -7,7 +7,7 @@ import { TenantAccessDenied } from "@/db";
 import { assistantConfig, businessTemplate } from "@/lib/assistant/config";
 import { act } from "./actions";
 import { Editor } from "./editor";
-import { asOwner } from "./store";
+import { asAssistantManager } from "./store";
 
 type Props = PageProps<"/workspaces/[businessId]/assistant">;
 async function Studio({ params, searchParams }: Props) {
@@ -23,7 +23,7 @@ async function Studio({ params, searchParams }: Props) {
   if (!ids.success) notFound();
   const { agent, thread, version } = ids.data;
   const base = `/workspaces/${businessId}/assistant`;
-  const data = await asOwner(businessId, async ({ tx }) => {
+  const data = await asAssistantManager(businessId, async ({ tx }) => {
     const agents = await tx.execute(
       sql`select id,name,active,published_version,tested_version from agents order by created_at`,
     );

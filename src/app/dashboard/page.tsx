@@ -30,7 +30,7 @@ async function Dashboard({ searchParams }: DashboardProps) {
   ] as const;
   return <main className="workspace">
     <aside className="sidebar"><Brand /><a className="workspace-switch" aria-label="Switch workspace" href="/workspaces"><Building2 size={20} /><div><strong>{business.name}</strong><span>{role}</span></div></a>
-      <nav aria-label="Workspace"><a className="nav-active" href={`/dashboard?businessId=${business.id}`} aria-current="page"><LayoutDashboard size={18} />Overview</a>{role === "Owner" && <a href={`/workspaces/${business.id}/assistant`}><Bot size={18} />AI assistants</a>}{navigation.map(([label, Icon]) => <span className="nav-disabled" key={label} aria-disabled="true"><Icon size={18} />{label}<small>Soon</small></span>)}</nav>
+      <nav aria-label="Workspace"><a className="nav-active" href={`/dashboard?businessId=${business.id}`} aria-current="page"><LayoutDashboard size={18} />Overview</a><a href={`/workspaces/${business.id}/team`}>Team</a>{["Owner","Assistant manager"].includes(role) && <a href={`/workspaces/${business.id}/assistant`}><Bot size={18} />AI assistants</a>}{navigation.map(([label, Icon]) => <span className="nav-disabled" key={label} aria-disabled="true"><Icon size={18} />{label}<small>Soon</small></span>)}</nav>
       <div className="sidebar-account"><strong>{session.user.name}</strong><span>{session.user.email}</span><Logout /></div>
     </aside>
     <section className="workspace-main"><header><span>Workspace overview</span><span className="role-label">{role}</span></header>
