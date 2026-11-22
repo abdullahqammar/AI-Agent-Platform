@@ -73,3 +73,12 @@ test("provider failures and unauthorized tool-shaped output fail closed", async 
     ),
   );
 });
+
+test("exhausted billing credit is distinct from transient rate limiting", async () => {
+  const { ProviderCreditsExhausted } = await import("../src/lib/assistant/provider.ts");
+  for (const code of ["credit_balance_exhausted", "insufficient_quota", "rate_limit_exceeded"]) {
+    await assert.rejects(generateAnswer(dentalExample, [], "Hello", async () =>
+      Response.json({ error: { code } }, { status: 429 }), "test-only"),
+      error => error instanceof Error && (error instanceof ProviderCreditsExhausted) === (code !== "rate_limit_exceeded"));
+  }
+});

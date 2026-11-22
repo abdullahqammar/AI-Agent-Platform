@@ -3,7 +3,7 @@ import { sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { assistantConfig } from "@/lib/assistant/config";
-import { generateAnswer } from "@/lib/assistant/provider";
+import { generateAnswer, ProviderCreditsExhausted } from "@/lib/assistant/provider";
 import { asAssistantManager } from "./store";
 
 export async function act(business: string, form: FormData) {
@@ -130,10 +130,9 @@ export async function act(business: string, form: FormData) {
     let result;
     try {
       result = await generateAnswer(config, [...context].reverse(), message);
-    } catch {
-      await audit("assistant.provider.failed", thread);
-      notice =
-        "Provider unavailable. Your message was saved. Retry after checking provider settings.";
+    } catch (error) {
+      notice = error instanceof ProviderCreditsExhausted ? "billing" : "unavailable";
+      await audit(notice === "billing" ? "assistant.provider.quota_exhausted" : "assistant.provider.failed", thread);
       return;
     }
     await append("outbound", result.answer, result.usage);
@@ -150,6 +149,6 @@ export async function act(business: string, form: FormData) {
   });
   const params = new URLSearchParams({ agent: String(agent) });
   if (thread) params.set("thread", thread);
-  if (notice) params.set("providerError", "1");
+  if (notice) params.set("providerError", notice);
   redirect(`/workspaces/${business}/assistant?${params}`);
 }

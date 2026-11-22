@@ -164,8 +164,9 @@ async function Studio({ params, searchParams }: Props) {
           ))}
           {query.providerError && (
             <p role="alert">
-              Provider unavailable. Your message was saved. Check provider
-              settings before retrying.
+              {query.providerError === "billing"
+                ? "OpenAI reports exhausted API credit or quota. Your message was saved. Check API project billing before retrying."
+                : "Provider unavailable. Your message was saved. Check provider settings before retrying."}
             </p>
           )}
           {data.selected?.needs_human ? (

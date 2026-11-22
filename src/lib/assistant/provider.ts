@@ -1,6 +1,8 @@
 import { z } from "zod";
 import type { AssistantConfig } from "./config.ts";
 
+export class ProviderCreditsExhausted extends Error {}
+
 const output = z.strictObject({
   answer: z.string().trim().min(1).max(6000),
   handoff: z.boolean(),
@@ -59,6 +61,12 @@ export async function generateAnswer(
     },
     body: JSON.stringify(payload),
   });
+  if (response.status === 429) {
+    const failure = await response.json().catch(() => null);
+    if (failure?.error?.code === "credit_balance_exhausted" || failure?.error?.code === "insufficient_quota") {
+      throw new ProviderCreditsExhausted("Provider credit or quota exhausted");
+    }
+  }
   if (!response.ok) throw new Error("Provider unavailable");
   const data = await response.json();
   return {
