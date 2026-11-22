@@ -1,0 +1,12 @@
+{
+  "name": "AgentFlow private demo",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:24-bookworm",
+  "features": { "ghcr.io/devcontainers/features/docker-in-docker:2": {} },
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": { "label": "AgentFlow", "onAutoForward": "notify" },
+    "5432": { "onAutoForward": "ignore" }
+  },
+  "postCreateCommand": "npm ci",
+  "postStartCommand": "bash .devcontainer/start-demo.sh"
+}
