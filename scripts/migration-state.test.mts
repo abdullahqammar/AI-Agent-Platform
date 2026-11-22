@@ -43,9 +43,15 @@ test("local migration journal, RLS and permission catalog match application sche
         SELECT policyname, permissive, roles, cmd, qual, with_check FROM pg_policies
         WHERE schemaname='public' AND tablename=${expected.name}
       `;
-      assert.equal(policies.length, Number(expected.enableRLS), expected.name);
+      const membershipDiscovery = expected.name === "business_memberships";
+      assert.equal(policies.length, Number(expected.enableRLS) + Number(membershipDiscovery), expected.name);
+      if (membershipDiscovery) {
+        const discovery = policies.find(p => p.policyname === "agentflow_own_memberships");
+        assert.equal(discovery?.cmd, "SELECT");
+        assert.ok(discovery?.qual.includes("identity_subject"));
+      }
       if (expected.enableRLS) {
-        const policy = policies[0];
+        const policy = policies.find(p => p.policyname === "agentflow_scope")!;
         assert.equal(policy.policyname, "agentflow_scope");
         assert.equal(policy.permissive, "PERMISSIVE");
         assert.equal(policy.cmd, "ALL");

@@ -16,6 +16,7 @@ test("authenticated workspace onboarding and tenant isolation", async (t) => {
     email: `workspace-test-${randomUUID()}@example.com`,
     password: randomBytes(32).toString("base64url"), subject: "", cookie: "", business: "",
   }));
+  const extraBusinesses = new Set<string>();
   const rollbackSubject = "rollback-" + randomUUID();
   let rollbackBusiness = "";
   const input = { businessName: "Disposable workspace " + randomUUID(), timezone: "Asia/Karachi", locationName: "Main office", address: "Test address" };
@@ -83,6 +84,30 @@ test("authenticated workspace onboarding and tenant isolation", async (t) => {
         assert.equal((await retry.json()).businessId, user.business);
       }
       assert.notEqual(users[0].business, users[1].business);
+    });
+    await t.test("dashboard links enforce membership in the requested workspace", async () => {
+      const path = "/dashboard?businessId=" + users[0].business;
+      const own = await (await request(path, users[0])).text();
+      assert.ok(own.includes(input.businessName));
+      const denied = await (await request(path, users[1])).text();
+      assert.ok(denied.includes("Workspace access unavailable"));
+      assert.ok(!denied.includes(input.businessName));
+    });
+    await t.test("additional workspace retries are idempotent and discovery is identity scoped", async () => {
+      const key = randomUUID();
+      const store = workspaceDatabase(client);
+      const ids = await Promise.all([0, 1].map(async () => {
+        const id = await store.create(users[0].subject, input, key);
+        extraBusinesses.add(id);
+        return id;
+      }));
+      assert.equal(ids[0], ids[1]);
+      assert.notEqual(ids[0], users[0].business);
+      assert.equal((await store.identity(users[0].subject)).homeBusinessId, users[0].business);
+      assert.deepEqual(new Set((await store.listMemberships(users[0].subject)).map(m => m.businessId)),
+        new Set([users[0].business, ids[0]]));
+      assert.deepEqual(await store.listMemberships(users[1].subject), [{ businessId: users[1].business }]);
+      assert.equal((await request("/api/workspace?businessId=" + ids[0], users[1])).status, 403);
     });
     await t.test("owner permissions, location, membership and audit are persisted once", async () => {
       for (const user of users) {
@@ -168,8 +193,8 @@ test("authenticated workspace onboarding and tenant isolation", async (t) => {
         if (user.subject) await client.begin(async tx => {
           await tx`SELECT set_config('agentflow.identity_issuer', ${identityIssuer}, true), set_config('agentflow.identity_subject', ${user.subject}, true)`;
           const [identity] = await tx`SELECT home_business_id FROM users WHERE identity_subject=${user.subject} AND identity_issuer=${identityIssuer}`;
-          const business = identity?.home_business_id;
-          if (business) {
+          const owned = [identity?.home_business_id, ...(user === users[0] ? extraBusinesses : [])].filter(Boolean);
+          for (const business of owned) {
             await tx`SELECT set_config('agentflow.business_id', ${business}, true)`;
             await tx`UPDATE users SET home_business_id=null WHERE identity_subject=${user.subject} AND identity_issuer=${identityIssuer}`;
             for (const table of ["audit_events", "business_memberships", "role_permissions", "business_locations", "roles"]) {

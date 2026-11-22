@@ -1,8 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { onboarding } from "@/lib/validation";
-export function OnboardingForm({ timezones }: { timezones: string[] }) {
+export function OnboardingForm({ timezones, additional = false }: { timezones: string[], additional?: boolean }) {
+  const key = useRef<string | null>(null);
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -13,11 +14,13 @@ export function OnboardingForm({ timezones }: { timezones: string[] }) {
     if (!input.success) { setMessage(input.error.issues[0].message); return; }
     setBusy(true); setMessage("");
     try {
-      const response = await fetch("/api/workspace", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input.data) });
+      if (additional) key.current ??= crypto.randomUUID();
+      const response = await fetch("/api/workspace", { method: "POST", headers: { "Content-Type": "application/json", ...(key.current ? { "Idempotency-Key": key.current } : {}) }, body: JSON.stringify(input.data) });
       if (response.status === 401) { router.replace("/login"); router.refresh(); return; }
       if (!response.ok) { setMessage("Unable to create your workspace. Check your details and try again."); setBusy(false); return; }
       setMessage("Workspace created. Opening your dashboard…");
-      router.replace("/dashboard");
+      const { businessId } = await response.json();
+      router.replace(additional ? `/dashboard?businessId=${encodeURIComponent(businessId)}` : "/dashboard");
       router.refresh();
     } catch { setMessage("Unable to connect. Please try again."); setBusy(false); }
   }}>

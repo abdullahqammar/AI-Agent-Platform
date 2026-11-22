@@ -1,21 +1,27 @@
+import { z } from "zod";
 import { Suspense } from "react";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Building2, MapPin, Globe2, LayoutDashboard, MessageSquare, Bot, Users, CalendarDays, BookOpen, Plug, Settings } from "lucide-react";
 import { verifiedSession, workspaceStore, readWorkspace } from "@/lib/workspace";
 import { TenantAccessDenied } from "@/db";
 import { Brand } from "@/components/brand";
 import { Logout } from "@/components/logout";
 
-async function Dashboard() {
+type DashboardProps = Pick<PageProps<"/dashboard">, "searchParams">;
+
+async function Dashboard({ searchParams }: DashboardProps) {
   const session = await verifiedSession();
   if (!session) redirect("/login");
-  const user = await workspaceStore().identity(session.user.id);
-  if (!user.homeBusinessId) redirect("/onboarding");
+  const { businessId } = await searchParams;
+  const selected = z.uuid().optional().safeParse(businessId);
+  if (!selected.success) notFound();
+  const target = selected.data ?? (await workspaceStore().identity(session.user.id)).homeBusinessId;
+  if (!target) redirect("/onboarding");
   let workspace;
-  try { workspace = await readWorkspace(session.user.id, user.homeBusinessId); }
+  try { workspace = await readWorkspace(session.user.id, target); }
   catch (error) {
     if (!(error instanceof TenantAccessDenied)) throw error;
-    return <main className="access-message"><Brand /><h1>Workspace access unavailable</h1><p>Your membership or permissions may have changed. Contact your business owner.</p><Logout /></main>;
+    return <main className="access-message"><Brand /><h1>Workspace access unavailable</h1><p>Your membership or permissions may have changed. Contact your business owner.</p><a href="/workspaces">Your workspaces</a><Logout /></main>;
   }
   const { business, role, locations } = workspace;
   const navigation = [
@@ -23,8 +29,8 @@ async function Dashboard() {
     ["Knowledge", BookOpen], ["Channels", Plug], ["Settings", Settings],
   ] as const;
   return <main className="workspace">
-    <aside className="sidebar"><Brand /><div className="workspace-switch"><Building2 size={20} /><div><strong>{business.name}</strong><span>{role}</span></div></div>
-      <nav aria-label="Workspace"><a className="nav-active" href="/dashboard" aria-current="page"><LayoutDashboard size={18} />Overview</a>{navigation.map(([label, Icon]) => <span className="nav-disabled" key={label} aria-disabled="true"><Icon size={18} />{label}<small>Soon</small></span>)}</nav>
+    <aside className="sidebar"><Brand /><a className="workspace-switch" aria-label="Switch workspace" href="/workspaces"><Building2 size={20} /><div><strong>{business.name}</strong><span>{role}</span></div></a>
+      <nav aria-label="Workspace"><a className="nav-active" href={`/dashboard?businessId=${business.id}`} aria-current="page"><LayoutDashboard size={18} />Overview</a>{navigation.map(([label, Icon]) => <span className="nav-disabled" key={label} aria-disabled="true"><Icon size={18} />{label}<small>Soon</small></span>)}</nav>
       <div className="sidebar-account"><strong>{session.user.name}</strong><span>{session.user.email}</span><Logout /></div>
     </aside>
     <section className="workspace-main"><header><span>Workspace overview</span><span className="role-label">{role}</span></header>
@@ -36,4 +42,4 @@ async function Dashboard() {
     </section>
   </main>;
 }
-export default function Page() { return <Suspense fallback={<p className="loading">Loading workspace…</p>}><Dashboard /></Suspense>; }
+export default function Page(props: DashboardProps) { return <Suspense fallback={<p className="loading">Loading workspace…</p>}><Dashboard {...props} /></Suspense>; }

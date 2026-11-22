@@ -14,8 +14,14 @@ export async function POST(request: Request) {
   try { input = onboarding.safeParse(await request.json()); }
   catch { return NextResponse.json({ error: "Send a valid workspace form." }, { status: 400 }); }
   if (!input.success) return NextResponse.json({ error: input.error.issues[0].message }, { status: 400 });
+  const key = request.headers.get("Idempotency-Key");
+  if (key !== null && !z.uuid().safeParse(key).success) {
+    return NextResponse.json({ error: "Invalid creation request." }, { status: 400 });
+  }
   try {
-    const businessId = await workspaceStore().onboard(session.user.id, input.data);
+    const store = workspaceStore();
+    const businessId = key ? await store.create(session.user.id, input.data, key)
+      : await store.onboard(session.user.id, input.data);
     return NextResponse.json({ businessId });
   } catch {
     return NextResponse.json({ error: "Workspace creation failed. Please retry." }, { status: 500 });

@@ -54,7 +54,7 @@ test("AgentFlow schema and tenant boundaries", async (t) => {
         assert.ok(row, config.name);
         assert.equal(row.relrowsecurity, config.enableRLS, config.name);
         assert.equal(row.relforcerowsecurity, config.enableRLS, config.name);
-        assert.equal(Number(row.policies), Number(config.enableRLS), config.name);
+        assert.equal(Number(row.policies), Number(config.enableRLS) + Number(config.name === "business_memberships"), config.name);
         assert.equal(Number(row.fks), config.foreignKeys.length, config.name);
         assert.equal(Number(row.uniques), config.uniqueConstraints.length, config.name);
         assert.equal(Number(row.checks), config.checks.length, config.name);

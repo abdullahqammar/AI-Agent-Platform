@@ -22,6 +22,13 @@
       "when": 1795295560364,
       "tag": "0002_first_workspace",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795360498629,
+      "tag": "0003_workspace_membership_discovery",
+      "breakpoints": true
     }
   ]
 }
