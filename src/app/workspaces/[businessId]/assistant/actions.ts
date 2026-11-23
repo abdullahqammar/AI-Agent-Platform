@@ -3,7 +3,7 @@ import { sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { assistantConfig } from "@/lib/assistant/config";
-import { generateAnswer, ProviderCreditsExhausted } from "@/lib/assistant/provider";
+import { generateAnswer, LocalProviderError, ProviderCreditsExhausted } from "@/lib/assistant/provider";
 import { asAssistantManager } from "./store";
 
 export async function act(business: string, form: FormData) {
@@ -132,7 +132,7 @@ export async function act(business: string, form: FormData) {
     try {
       result = await generateAnswer(config, [...context].reverse(), message);
     } catch (error) {
-      notice = error instanceof ProviderCreditsExhausted ? "billing" : "unavailable";
+      notice = error instanceof ProviderCreditsExhausted ? "billing" : error instanceof LocalProviderError ? error.reason : "unavailable";
       await audit(notice === "billing" ? "assistant.provider.quota_exhausted" : "assistant.provider.failed", thread);
       return;
     }

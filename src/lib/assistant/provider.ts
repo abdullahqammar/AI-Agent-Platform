@@ -3,6 +3,14 @@ import type { AssistantConfig } from "./config.ts";
 
 export class ProviderCreditsExhausted extends Error {}
 
+export class LocalProviderError extends Error {
+  readonly reason: "offline" | "timeout" | "modelMissing";
+  constructor(reason: LocalProviderError["reason"]) {
+    super(reason);
+    this.reason = reason;
+  }
+}
+
 const output = z.strictObject({
   answer: z.string().trim().min(1).max(6000),
   handoff: z.boolean(),
@@ -68,7 +76,11 @@ export async function generateAnswer(
       "Content-Type": "application/json",
     },
     body: JSON.stringify(local ? { model: config.model, messages: payload.messages, response_format: payload.response_format, max_tokens: 600 } : payload),
+  }).catch((error: unknown) => {
+    if (local) throw new LocalProviderError(error instanceof Error && error.name === "TimeoutError" ? "timeout" : "offline");
+    throw error;
   });
+  if (local && response.status === 404) throw new LocalProviderError("modelMissing");
   if (!local && response.status === 429) {
     const failure = await response.json().catch(() => null);
     if (failure?.error?.code === "credit_balance_exhausted" || failure?.error?.code === "insufficient_quota") {

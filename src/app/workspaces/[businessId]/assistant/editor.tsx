@@ -1,5 +1,6 @@
 "use client";
 import { approvedModel } from "@/lib/assistant/config";
+import { useFormStatus } from "react-dom";
 import { useState } from "react";
 import {
   businessTemplate,
@@ -7,24 +8,36 @@ import {
   type AssistantConfig,
 } from "@/lib/assistant/config";
 
+export function SendMessage({ disabled }: { disabled: boolean }) {
+  const { pending, data } = useFormStatus();
+  return <button name="action" value="send" disabled={disabled || pending} aria-live="polite">
+    {pending && data?.get("action") === "send" ? "Waiting for reply…" : "Send"}
+  </button>;
+}
+
 export function Editor({ initial }: { initial: AssistantConfig }) {
   const [config, set] = useState(initial);
+  const labels = {
+    name: "Assistant name", businessProfile: "Business profile", role: "Role", purpose: "Responsibilities",
+    instructions: "Instructions", policies: "Business policies", tone: "Tone", language: "Language", escalation: "Handoff rules",
+  };
+  function field(key: keyof typeof labels) {
+    return <label key={key}>{labels[key]}
+      <textarea required maxLength={2000} value={config[key]}
+        onChange={event => set({ ...config, [key]: event.target.value })} />
+    </label>;
+  }
   return (
-    <fieldset>
-      <legend>Draft instructions and sources</legend>
+    <fieldset className="editor-fields">
+      <legend>Assistant configuration</legend>
       <label>
         Load template{" "}
         <select
           defaultValue=""
           onChange={(e) => {
-            if (e.target.value)
-              set(
-                structuredClone(
-                  e.target.value === "example"
-                    ? dentalExample
-                    : businessTemplate,
-                ),
-              );
+            if (!e.target.value) return;
+            const template = e.target.value === "example" ? dentalExample : businessTemplate;
+            set({ ...structuredClone(template), model: config.model });
           }}
         >
           <option value="">Choose a template</option>
@@ -32,31 +45,15 @@ export function Editor({ initial }: { initial: AssistantConfig }) {
           <option value="example">Example dental clinic</option>
         </select>
       </label>
-      {(
-        [
-          "name",
-          "businessProfile",
-          "role",
-          "purpose",
-          "instructions",
-          "policies",
-          "tone",
-          "language",
-          "escalation",
-        ] as const
-      ).map((key) => (
-        <label key={key}>
-          {key === "businessProfile" ? "Business profile" : key}
-          <textarea
-            required
-            maxLength={2000}
-            value={config[key]}
-            onChange={(e) => set({ ...config, [key]: e.target.value })}
-          />
-        </label>
-      ))}
+      <div className="identity-grid">
+        {(["name", "businessProfile", "role", "purpose"] as const).map(key => field(key))}
+      </div>
+      <details className="behavior-fields">
+        <summary>Instructions, tone and handoff rules</summary>
+        {(["instructions", "policies", "tone", "language", "escalation"] as const).map(key => field(key))}
+      </details>
       <label>Model
-        <select value={config.model} onChange={event => set({...config, model: approvedModel.parse(event.target.value)})}>
+        <select aria-label="Model" value={config.model} onChange={event => set({...config, model: approvedModel.parse(event.target.value)})}>
           <option value="gpt-4.1-mini">OpenAI · GPT-4.1 mini</option>
           <option value="qwen2.5:7b">Local Ollama · Qwen2.5 7B</option>
         </select>
@@ -69,12 +66,13 @@ export function Editor({ initial }: { initial: AssistantConfig }) {
         />{" "}
         Allow the assistant to request staff handoff
       </label>
+      <h2>Business knowledge</h2>
       {config.knowledge.map((source, index) => (
         <fieldset key={index}>
           <legend>Assigned source {index + 1}</legend>
           {(["title", "text"] as const).map((key) => (
             <label key={key}>
-              {key}
+              {key === "title" ? "Source name" : "Information"}
               <textarea
                 required
                 value={source[key]}

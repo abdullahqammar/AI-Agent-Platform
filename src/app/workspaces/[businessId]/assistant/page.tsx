@@ -6,7 +6,7 @@ import { z } from "zod";
 import { TenantAccessDenied } from "@/db";
 import { assistantConfig, businessTemplate, usesRetiredModel } from "@/lib/assistant/config";
 import { act } from "./actions";
-import { Editor } from "./editor";
+import { Editor, SendMessage } from "./editor";
 import { asAssistantManager } from "./store";
 
 type Props = PageProps<"/workspaces/[businessId]/assistant">;
@@ -65,25 +65,72 @@ async function Studio({ params, searchParams }: Props) {
     </>
   );
   return (
-    <main className="assistant-studio">
+    <main className="assistant-studio assistant-workbench">
       <Link href={`/dashboard?businessId=${businessId}`}>
         Workspace overview
       </Link>
       <h1>Business assistants</h1>
-      <nav>
-        <Link href={base}>New assistant</Link>
+      <nav aria-label="Assistants">
+        <Link href={base} aria-current={!agent ? "page" : undefined}>New assistant</Link>
         {data.agents.map((a) => (
-          <Link key={String(a.id)} href={base + "?agent=" + a.id}>
+          <Link key={String(a.id)} aria-current={a.id === agent ? "page" : undefined} href={base + "?agent=" + a.id}>
             {String(a.name)}
           </Link>
         ))}
       </nav>
+      <div className="workbench-content">
       {current && (
         <p>
-          {current.active ? "Enabled" : "Disabled"} · Published version{" "}
-          {String(current.published_version ?? "none")}
+          {current.published_version ? `${current.active ? "Enabled" : "Disabled"} · Published version ${current.published_version}` : "Draft · Ready for testing"}
         </p>
       )}
+      {agent && <p className="version-model">Version {Number(row.version)} · {retired ? "Qwen2.5 3B (retired)" : config.model === "qwen2.5:7b" ? "Local Ollama · Qwen2.5 7B" : "OpenAI · GPT-4.1 mini"}</p>}
+      {thread && (
+        <section className="chat-panel">
+          <h2>Conversation with {String(data.selected?.name)}</h2>
+          {data.messages.map((m, i) => (
+            <p key={i} className={m.direction === "inbound" ? "customer-message" : "assistant-message"}>
+              <strong>
+                {m.direction === "inbound" ? "Customer" : "Assistant"}
+              </strong>{" "}
+              {String(m.body)}
+            </p>
+          ))}
+          {query.providerError && (
+            <p role="alert">
+              {query.providerError === "billing"
+                ? "OpenAI reports exhausted API credit or quota. Your message was saved. Check API project billing before retrying."
+                : query.providerError === "modelMissing"
+                ? "Ollama could not find Qwen2.5 7B. Run ollama pull qwen2.5:7b on the computer running AgentFlow, then send a message again."
+                : query.providerError === "offline"
+                ? "AgentFlow could not reach Ollama. Open Ollama on the computer running AgentFlow and check that ollama list shows qwen2.5:7b."
+                : query.providerError === "timeout"
+                ? "Ollama took longer than 90 seconds. Try a shorter message after the model has loaded."
+                : config.model === "qwen2.5:7b"
+                ? "Ollama could not return a usable reply. Your message was saved. Test qwen2.5:7b directly in Ollama, then send a message again."
+                : "OpenAI could not return a reply. Check the server’s OpenAI API key and provider availability, or save a draft using local Ollama."}
+            </p>
+          )}
+          {data.selected?.needs_human ? (
+            <p>Awaiting staff follow-up</p>
+          ) : (
+            <form action={formAction}>
+              {fields}
+              <input type="hidden" name="thread" value={thread} />
+              <label>
+                Message
+                <textarea name="message" required maxLength={3000} />
+              </label>
+              <SendMessage disabled={retired} />
+              <button name="action" value="handoff" formNoValidate>
+                Request staff handoff
+              </button>
+            </form>
+          )}
+        </section>
+      )}
+      <details className="studio-card" key={agent ?? "new"} open={!agent}>
+        <summary>{agent ? "Edit configuration and knowledge" : "Create an assistant"}</summary>
       <form action={formAction}>
         {fields}
         {retired && <p>This version used Qwen2.5 3B. Save a new draft and test Qwen2.5 7B before publishing.</p>}
@@ -92,42 +139,15 @@ async function Studio({ params, searchParams }: Props) {
           Save new draft version
         </button>
       </form>
-      {agent && (
-        <>
-          <h2>Version history</h2>
-          <nav>
-            {data.versions.map((v) => (
-              <Link
-                key={Number(v.version)}
-                href={base + "?agent=" + agent + "&version=" + v.version}
-              >
-                Version {Number(v.version)}
-              </Link>
-            ))}
-          </nav>
-          <form action={formAction}>
-            {fields}
-            <p>
-              Selected version {Number(row.version)}. Save a historical version
-              as a new draft to restore it.
-            </p>
-            <button
-              name="action"
-              value="publish"
-              disabled={retired || current?.tested_version !== row.version}
-            >
-              Publish and enable
-            </button>
-            <button name="action" value="disable">
-              Disable
-            </button>
-          </form>
-          <h2>Conversations</h2>
+      </details>
+      {agent && <>
+      <section className="studio-card">
+          <h2>Start a conversation</h2>
           <form action={formAction}>
             {fields}
             <label>
               Customer name
-              <input name="customer" required maxLength={120} />
+              <input name="customer" placeholder="e.g. Demo customer" required maxLength={120} />
             </label>
             <button name="action" value="test" disabled={retired}>
               Start version test
@@ -142,6 +162,27 @@ async function Studio({ params, searchParams }: Props) {
               Start published conversation
             </button>
           </form>
+      </section>
+      <section className="studio-card">
+        <h2>Publishing</h2>
+        <form action={formAction}>
+            {fields}
+            <p>
+              {current?.tested_version === row.version ? "This version has completed a test reply." : "Get a successful test reply to unlock publishing."}
+            </p>
+            <button
+              name="action"
+              value="publish"
+              disabled={retired || current?.tested_version !== row.version}
+            >
+              Publish and enable
+            </button>
+            <button name="action" value="disable" disabled={!current?.active}>
+              Disable
+            </button>
+          </form>
+      </section>
+      <details className="studio-card"><summary>Conversation history ({data.threads.length})</summary>
           <ul>
             {data.threads.map((t) => (
               <li key={String(t.id)}>
@@ -152,46 +193,22 @@ async function Studio({ params, searchParams }: Props) {
               </li>
             ))}
           </ul>
-        </>
-      )}
-      {thread && (
-        <section>
-          <h2>Conversation with {String(data.selected?.name)}</h2>
-          {data.messages.map((m, i) => (
-            <p key={i}>
-              <strong>
-                {m.direction === "inbound" ? "Customer" : "Assistant"}
-              </strong>{" "}
-              {String(m.body)}
-            </p>
-          ))}
-          {query.providerError && (
-            <p role="alert">
-              {query.providerError === "billing"
-                ? "OpenAI reports exhausted API credit or quota. Your message was saved. Check API project billing before retrying."
-                : "Provider unavailable. Your message was saved. Check provider settings before retrying."}
-            </p>
-          )}
-          {data.selected?.needs_human ? (
-            <p>Awaiting staff follow-up</p>
-          ) : (
-            <form action={formAction}>
-              {fields}
-              <input type="hidden" name="thread" value={thread} />
-              <label>
-                Message
-                <textarea name="message" required maxLength={3000} />
-              </label>
-              <button name="action" value="send" disabled={retired}>
-                Send
-              </button>
-              <button name="action" value="handoff" formNoValidate>
-                Request staff handoff
-              </button>
-            </form>
-          )}
-        </section>
-      )}
+      </details>
+      <details className="studio-card"><summary>Version history</summary>
+
+          <nav>
+            {data.versions.map((v) => (
+              <Link
+                key={Number(v.version)}
+                href={base + "?agent=" + agent + "&version=" + v.version}
+              >
+                Version {Number(v.version)}
+              </Link>
+            ))}
+          </nav>
+      </details>
+      </>}
+      </div>
     </main>
   );
 }

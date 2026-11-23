@@ -103,3 +103,10 @@ test("local model calls only loopback and receives no cloud credential", async (
   }, "");
   assert.equal(result.usage.model,"qwen2.5:7b");
 });
+
+test("Ollama failures distinguish connection, timeout and missing model", async () => {
+  const config = { ...dentalExample, model: "qwen2.5:7b" } as const;
+  await assert.rejects(generateAnswer(config, [], "Hello", async () => new Response(null, { status: 404 })), { reason: "modelMissing" });
+  await assert.rejects(generateAnswer(config, [], "Hello", async () => { throw new TypeError("fetch failed"); }), { reason: "offline" });
+  await assert.rejects(generateAnswer(config, [], "Hello", async () => { throw new DOMException("expired", "TimeoutError"); }), { reason: "timeout" });
+});

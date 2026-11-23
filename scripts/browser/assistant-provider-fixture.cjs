@@ -13,6 +13,8 @@ globalThis.fetch = async function simulatedProvider(resource, init) {
     typeof resource === "string"
       ? resource
       : (resource.url ?? String(resource));
+  if (url === "http://127.0.0.1:11434/v1/chat/completions")
+    return Response.json({ error: { message: "model not found" } }, {status: 404});
   if (url !== "https://api.openai.com/v1/chat/completions")
     return originalFetch(resource, init);
   const payload = JSON.parse(init?.body ?? (await resource.clone().text()));
