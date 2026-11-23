@@ -13,3 +13,5 @@ The full capability inventory and release requirements are in section 6 of the m
 | Enterprise orchestration and operations | Released controls, reliable jobs and audit | Bounded handoffs and budgets, recovery, reporting, additional channels and workspace isolation under load |
 
 Build all stages within the agreed project. Activate commercial and advanced capabilities only after operational acceptance and owner release.
+
+In-app handoff triage now supports workspace-wide discovery, claiming and releasing assignments. The next inbox dependency is an attributed staff reply with explicit handoff resolution.

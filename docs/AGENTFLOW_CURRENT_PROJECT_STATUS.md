@@ -34,3 +34,11 @@ The configured OpenAI credential could read gpt-4.1-mini metadata through the cl
 ## Local inference for a private demo
 
 Install Ollama on the same host as the AgentFlow Node server. On Windows, start Ollama and run `ollama pull qwen2.5:7b` in PowerShell. With an existing local AgentFlow installation, choose the template first and then **Model → Local Ollama · Qwen2.5 7B**, save the draft and start a test. The fixed destination is the Ollama chat API on 127.0.0.1 port 11434. If a system HTTP proxy is configured, include 127.0.0.1 and localhost in NO_PROXY. A cloud-hosted AgentFlow instance requires its own co-located Ollama runtime. No paid-provider fallback occurs. Local inference speed, GPU acceleration and model quality require verification on the target machine. Review the model's license before a commercial rollout.
+
+## Staff handoff queue
+
+Open **Staff handoffs** from the dashboard to see in-app conversations awaiting human follow-up across the selected workspace's assistants. Each entry identifies the customer, assistant, test or published status and current assignee. Open the customer link to read the conversation history. Owners and Assistant managers can claim an unassigned conversation or release their own assignment. Owners can also release another member's assignment. Releasing returns the conversation to the queue with AI replies still paused.
+
+The queue reuses the existing assignment history, tenant constraints and audit events. This milestone requires no migration or external account. Staff replies, handoff resolution, notifications and external channel delivery remain open.
+
+Chromium verified claim, release, assignment persistence after reload, competing claims from stale pages, owner release of a manager's assignment, and refusal of a stale release after reassignment at 1440×900 and 390×844. A viewer and an unrelated account received the access-denied page. The assistant browser demo used simulated model output. The assignment and authorization checks ran against local PostgreSQL.
