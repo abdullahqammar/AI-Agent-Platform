@@ -17,7 +17,15 @@ export function OnboardingForm({ timezones, additional = false }: { timezones: s
       if (additional) key.current ??= crypto.randomUUID();
       const response = await fetch("/api/workspace", { method: "POST", headers: { "Content-Type": "application/json", ...(key.current ? { "Idempotency-Key": key.current } : {}) }, body: JSON.stringify(input.data) });
       if (response.status === 401) { router.replace("/login"); router.refresh(); return; }
-      if (!response.ok) { setMessage("Unable to create your workspace. Check your details and try again."); setBusy(false); return; }
+      if (!response.ok) {
+        const detail = await response.json().catch(() => null);
+        const reason = response.status === 403
+          ? "Open AgentFlow at the address configured in BETTER_AUTH_URL and try again."
+          : detail?.error;
+        setMessage(typeof reason === "string" ? reason : `Workspace creation failed (HTTP ${response.status}).`);
+        setBusy(false);
+        return;
+      }
       setMessage("Workspace created. Opening your dashboard…");
       const { businessId } = await response.json();
       router.replace(additional ? `/dashboard?businessId=${encodeURIComponent(businessId)}` : "/dashboard");

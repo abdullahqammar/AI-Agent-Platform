@@ -23,8 +23,13 @@ export async function POST(request: Request) {
     const businessId = key ? await store.create(session.user.id, input.data, key)
       : await store.onboard(session.user.id, input.data);
     return NextResponse.json({ businessId });
-  } catch {
-    return NextResponse.json({ error: "Workspace creation failed. Please retry." }, { status: 500 });
+  } catch (error) {
+    // Log only the database status code. Driver messages can contain form values.
+    const sqlState = z.object({ code: z.string().regex(/^[0-9A-Z]{5}$/) });
+    const code = sqlState.safeParse(error instanceof Error ? error.cause : undefined);
+    const direct = sqlState.safeParse(error);
+    console.error("Workspace creation failed", code.data?.code ?? direct.data?.code ?? "unclassified");
+    return NextResponse.json({ error: "Workspace creation failed on the server. Check the AgentFlow server terminal for the diagnostic." }, { status: 500 });
   }
 }
 
