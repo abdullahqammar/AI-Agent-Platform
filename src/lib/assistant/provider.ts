@@ -14,7 +14,7 @@ export async function generateAnswer(
   send: typeof fetch = fetch,
   key = process.env.AGENTFLOW_OPENAI_KEY,
 ) {
-  const local = config.model === "qwen2.5:3b";
+  const local = config.model === "qwen2.5:7b";
   if (!local && !key) throw new Error("Provider unavailable");
   const { knowledge, ...instructions } = config;
   const terms = new Set(message.toLowerCase().match(/[\p{L}\p{N}]{3,}/gu) ?? []);

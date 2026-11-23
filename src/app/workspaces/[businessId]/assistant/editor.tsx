@@ -58,7 +58,7 @@ export function Editor({ initial }: { initial: AssistantConfig }) {
       <label>Model
         <select value={config.model} onChange={event => set({...config, model: approvedModel.parse(event.target.value)})}>
           <option value="gpt-4.1-mini">OpenAI · GPT-4.1 mini</option>
-          <option value="qwen2.5:3b">Local Ollama · Qwen2.5 3B</option>
+          <option value="qwen2.5:7b">Local Ollama · Qwen2.5 7B</option>
         </select>
       </label>
       <label>

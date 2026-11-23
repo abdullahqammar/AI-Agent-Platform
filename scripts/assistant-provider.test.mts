@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { assistantConfig, dentalExample } from "../src/lib/assistant/config.ts";
+import { assistantConfig, dentalExample, usesRetiredModel } from "../src/lib/assistant/config.ts";
 import { generateAnswer } from "../src/lib/assistant/provider.ts";
 
 test("assigned sources and history stay below the instruction boundary", async () => {
@@ -35,6 +35,14 @@ test("assigned sources and history stay below the instruction boundary", async (
   );
   assert.equal(result.usage.outputTokens, 12);
   assert.equal(result.handoff, false);
+});
+test("retired local versions can be identified but cannot be executed", () => {
+  const previous = { ...dentalExample, model: "qwen2.5:3b" };
+  assert.equal(usesRetiredModel(previous), true);
+  assert.equal(assistantConfig.safeParse(previous).success, false);
+  const replacement = { ...previous, model: "qwen2.5:7b" };
+  assert.equal(usesRetiredModel(replacement), false);
+  assert.equal(assistantConfig.safeParse(replacement).success, true);
 });
 test("model allowlist rejects workspace-selected endpoints and unknown models", () => {
   assert.equal(
@@ -84,7 +92,7 @@ test("exhausted billing credit is distinct from transient rate limiting", async 
 });
 
 test("local model calls only loopback and receives no cloud credential", async () => {
-  const result = await generateAnswer({...dentalExample, model:"qwen2.5:3b"}, [], "Hours?", async (url, init) => {
+  const result = await generateAnswer({...dentalExample, model:"qwen2.5:7b"}, [], "Hours?", async (url, init) => {
     assert.equal(url, "http://127.0.0.1:11434/v1/chat/completions");
     assert.equal(new Headers(init?.headers).has("authorization"), false);
     const payload = JSON.parse(String(init?.body));
@@ -93,5 +101,5 @@ test("local model calls only loopback and receives no cloud credential", async (
     return Response.json({choices:[{message:{content:'{"answer":"Weekdays.","handoff":false}'}}],
       usage:{prompt_tokens:36,completion_tokens:8}});
   }, "");
-  assert.equal(result.usage.model,"qwen2.5:3b");
+  assert.equal(result.usage.model,"qwen2.5:7b");
 });

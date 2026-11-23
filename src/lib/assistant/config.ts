@@ -1,6 +1,10 @@
 import { z } from "zod";
 
-export const approvedModel = z.enum(["gpt-4.1-mini", "qwen2.5:3b"]);
+export const approvedModel = z.enum(["gpt-4.1-mini", "qwen2.5:7b"]);
+
+export function usesRetiredModel(settings: unknown): settings is Record<string, unknown> {
+  return typeof settings === "object" && settings !== null && "model" in settings && settings.model === "qwen2.5:3b";
+}
 
 const field = z.string().trim().min(1).max(2000);
 export const assistantConfig = z.strictObject({

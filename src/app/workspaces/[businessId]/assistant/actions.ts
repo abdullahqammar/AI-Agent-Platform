@@ -50,9 +50,9 @@ export async function act(business: string, form: FormData) {
       sql`select settings from agent_configurations where agent_id=${agent} and version=${version}`,
     );
     if (!row) throw Error("Version unavailable");
-    const config = assistantConfig.parse(row.settings);
+    const config = action === "disable" || action === "handoff" ? null : assistantConfig.parse(row.settings);
     if (action === "publish" || action === "disable") {
-      if (action === "publish") {
+      if (action === "publish" && config) {
         if (current.tested_version !== version)
           throw Error("Test this version successfully before publishing");
         await tx.execute(
@@ -110,6 +110,7 @@ export async function act(business: string, form: FormData) {
       (!current.active || current.published_version !== version)
     )
       throw Error("Version inactive");
+    if (!config) throw Error("Configuration unavailable");
     const message = z
       .string()
       .trim()

@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
 import { TenantAccessDenied } from "@/db";
-import { assistantConfig, businessTemplate } from "@/lib/assistant/config";
+import { assistantConfig, businessTemplate, usesRetiredModel } from "@/lib/assistant/config";
 import { act } from "./actions";
 import { Editor } from "./editor";
 import { asAssistantManager } from "./store";
@@ -54,7 +54,9 @@ async function Studio({ params, searchParams }: Props) {
       (v) => v.version === (data.selected?.agent_version ?? version),
     ) ?? data.versions[0];
   if ((agent && !current) || (thread && !data.selected)) notFound();
-  const config = row ? assistantConfig.parse(row.settings) : businessTemplate;
+  const settings = row?.settings;
+  const retired = usesRetiredModel(settings);
+  const config = row ? assistantConfig.parse(retired ? { ...settings, model: "qwen2.5:7b" } : settings) : businessTemplate;
   const formAction = act.bind(null, businessId);
   const fields = (
     <>
@@ -84,6 +86,7 @@ async function Studio({ params, searchParams }: Props) {
       )}
       <form action={formAction}>
         {fields}
+        {retired && <p>This version used Qwen2.5 3B. Save a new draft and test Qwen2.5 7B before publishing.</p>}
         <Editor key={String(agent) + String(row?.version)} initial={config} />
         <button name="action" value="save">
           Save new draft version
@@ -111,7 +114,7 @@ async function Studio({ params, searchParams }: Props) {
             <button
               name="action"
               value="publish"
-              disabled={current?.tested_version !== row.version}
+              disabled={retired || current?.tested_version !== row.version}
             >
               Publish and enable
             </button>
@@ -126,14 +129,14 @@ async function Studio({ params, searchParams }: Props) {
               Customer name
               <input name="customer" required maxLength={120} />
             </label>
-            <button name="action" value="test">
+            <button name="action" value="test" disabled={retired}>
               Start version test
             </button>
             <button
               name="action"
               value="chat"
               disabled={
-                !current?.active || current.published_version !== row.version
+                retired || !current?.active || current.published_version !== row.version
               }
             >
               Start published conversation
@@ -179,7 +182,7 @@ async function Studio({ params, searchParams }: Props) {
                 Message
                 <textarea name="message" required maxLength={3000} />
               </label>
-              <button name="action" value="send">
+              <button name="action" value="send" disabled={retired}>
                 Send
               </button>
               <button name="action" value="handoff" formNoValidate>
