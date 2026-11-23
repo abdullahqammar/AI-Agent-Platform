@@ -118,3 +118,16 @@ nav a,nav > span { display: flex; align-items: center; gap: 11px; padding: 10px 
 .assistant-workbench label { text-transform: none; font-weight: 550; }
 .assistant-workbench label :is(textarea, select, input) { font-weight: 400; }
 .assistant-workbench .workbench-content { min-width: 0; }
+
+.workforce-directory { background: white; border: 1px solid #d6dee9; border-radius: .9rem; padding: clamp(1rem, 3vw, 1.6rem); margin-block: 1.25rem; }
+.workforce-header, .workforce-directory li a { display: flex; align-items: center; gap: .75rem; }
+.workforce-header { justify-content: space-between; flex-wrap: wrap; }
+.workforce-header h2 { font-size: 1.2rem; font-weight: 650; }
+.workforce-create { background: #243d61; color: white; padding: .6rem .95rem; border-radius: .5rem; }
+.workforce-directory ul { padding: 0; margin: .8rem 0 0; list-style: none; }
+.workforce-directory li a { border-top: 1px solid #d6dee9; padding: .85rem 0; }
+.workforce-directory li strong { overflow-wrap: anywhere; }
+.workforce-directory li svg { flex-shrink: 0; }
+.workforce-directory li span { margin-left: auto; white-space: nowrap; }
+.workforce-directory a:focus-visible { outline: 3px solid #315f9a; outline-offset: 3px; }
+.workforce-directory p { margin: .75rem 0 0; }

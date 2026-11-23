@@ -15,3 +15,7 @@ The full capability inventory and release requirements are in section 6 of the m
 Build all stages within the agreed project. Activate commercial and advanced capabilities only after operational acceptance and owner release.
 
 In-app handoff triage now supports workspace-wide discovery, claiming and releasing assignments. The next inbox dependency is an attributed staff reply with explicit handoff resolution.
+
+## Benchmark-informed sequence
+
+The live dashboard directory closes the gap between creating an assistant and finding it again. First verify a grounded reply, persisted history and a model-requested handoff with an authorized live provider. Finish attributed staff replies and explicit handoff resolution next. Extend shared business knowledge and add safe retrieval inspection before file ingestion or channel rollout. Platform admin authority precedes Site Identity and centrally enforced availability. Workspace entitlements, credential ownership and idempotent usage records precede commercial activation and bounded orchestration. See [gap analysis](AGENTFLOW_PRODUCT_GAP_ANALYSIS.md) for decisions and [UX benchmark](AGENTFLOW_UX_UI_BENCHMARK.md) for acceptance.

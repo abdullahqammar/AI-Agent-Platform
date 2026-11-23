@@ -46,3 +46,9 @@ Chromium verified claim, release, assignment persistence after reload, competing
 ## Assistant testing experience
 
 The studio displays the model and version used by the selected conversation. Opening a thread brings its chat above configuration, version history and publish controls. Loading a template preserves the selected model. Saving a changed configuration creates a new version; start a new test to use it. The composer shows when a reply is pending. Ollama connection failures, timeouts and missing-model responses have separate recovery messages. Live inference on the owner’s PC still requires a local conversation test.
+
+## Workspace dashboard and product benchmark, 23 November 2026
+
+Owners and Assistant managers see their workspace's assistant roster on Overview. The first-use action creates an assistant; returning users open an existing assistant and see its published state. Viewers retain their workspace overview and team access. Five unavailable “Soon” navigation entries were removed. This uses the existing agent tables, roles and tenant transaction. No schema migration, new provider or paid service is involved.
+
+Local checks passed: database 8, migrations 4, authentication 8, workspace/authorization 13 and provider contracts 7. Chromium exercised the assistant and team journeys at 1440×900 and 390×844, including empty and populated dashboards, opening an existing assistant, and hiding the directory after demotion to Viewer. Provider replies and the missing-model condition used the documented fixture. TypeScript, ESLint and the production build passed. Competitor evidence boundaries and next milestones are in the [research](AGENTFLOW_COMPETITOR_RESEARCH.md) and [roadmap](AGENTFLOW_MASTER_ROADMAP.md). First live assistant acceptance remains open.
