@@ -14,7 +14,8 @@ export async function generateAnswer(
   send: typeof fetch = fetch,
   key = process.env.AGENTFLOW_OPENAI_KEY,
 ) {
-  if (!key) throw new Error("Provider unavailable");
+  const local = config.model === "qwen2.5:3b";
+  if (!local && !key) throw new Error("Provider unavailable");
   const { knowledge, ...instructions } = config;
   const terms = new Set(message.toLowerCase().match(/[\p{L}\p{N}]{3,}/gu) ?? []);
   const ranked = knowledge.map(source => {
@@ -51,17 +52,24 @@ export async function generateAnswer(
       },
     ],
   };
-  const response = await send("https://api.openai.com/v1/chat/completions", {
+  // Ollama serves an OpenAI-compatible chat API on the application host.
+  // Merge the developer instructions into the system message for local chat templates.
+  if (local) {
+    const [system, configuration, user] = payload.messages;
+    payload.messages = [{ role: "system", content: system.content + "\nWorkspace configuration:\n" + configuration.content }, user];
+  }
+  const endpoint = local ? "http://127.0.0.1:11434/v1/chat/completions" : "https://api.openai.com/v1/chat/completions";
+  const response = await send(endpoint, {
     method: "POST",
     redirect: "error",
-    signal: AbortSignal.timeout(15000),
+    signal: AbortSignal.timeout(local ? 90000 : 15000),
     headers: {
-      Authorization: `Bearer ${key}`,
+      ...(!local ? { Authorization: `Bearer ${key}` } : {}),
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(local ? { model: config.model, messages: payload.messages, response_format: payload.response_format, max_tokens: 600 } : payload),
   });
-  if (response.status === 429) {
+  if (!local && response.status === 429) {
     const failure = await response.json().catch(() => null);
     if (failure?.error?.code === "credit_balance_exhausted" || failure?.error?.code === "insufficient_quota") {
       throw new ProviderCreditsExhausted("Provider credit or quota exhausted");

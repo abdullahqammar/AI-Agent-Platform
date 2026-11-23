@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+export const approvedModel = z.enum(["gpt-4.1-mini", "qwen2.5:3b"]);
+
 const field = z.string().trim().min(1).max(2000);
 export const assistantConfig = z.strictObject({
   name: field,
@@ -21,7 +23,7 @@ export const assistantConfig = z.strictObject({
     .min(1)
     .max(12),
   allowHandoff: z.boolean(),
-  model: z.enum(["gpt-4.1-mini"]),
+  model: approvedModel,
 });
 export type AssistantConfig = z.infer<typeof assistantConfig>;
 export const businessTemplate: AssistantConfig = {

@@ -82,3 +82,16 @@ test("exhausted billing credit is distinct from transient rate limiting", async 
       error => error instanceof Error && (error instanceof ProviderCreditsExhausted) === (code !== "rate_limit_exceeded"));
   }
 });
+
+test("local model calls only loopback and receives no cloud credential", async () => {
+  const result = await generateAnswer({...dentalExample, model:"qwen2.5:3b"}, [], "Hours?", async (url, init) => {
+    assert.equal(url, "http://127.0.0.1:11434/v1/chat/completions");
+    assert.equal(new Headers(init?.headers).has("authorization"), false);
+    const payload = JSON.parse(String(init?.body));
+    assert.deepEqual(payload.messages.map((m: {role:string}) => m.role), ["system","user"]);
+    assert.equal(payload.max_tokens,600);
+    return Response.json({choices:[{message:{content:'{"answer":"Weekdays.","handoff":false}'}}],
+      usage:{prompt_tokens:36,completion_tokens:8}});
+  }, "");
+  assert.equal(result.usage.model,"qwen2.5:3b");
+});

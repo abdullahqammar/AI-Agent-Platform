@@ -30,3 +30,7 @@ Team milestone checks passed locally: database 8, migration 4, authentication 8 
 ## OpenAI live acceptance attempt
 
 The configured OpenAI credential could read gpt-4.1-mini metadata through the cloud HTTPS proxy. A synthetic browser conversation reached the provider-error flow. An adapter diagnostic received HTTP 429 with credit_balance_exhausted. No live assistant answer, usage receipt, or model-triggered handoff was verified. Check the API project's billing before repeating the test. Node startup uses the environment proxy for configured HTTPS destinations (Node 24.22.3 verified).
+
+## Local inference for a private demo
+
+Install Ollama on the same host as the AgentFlow Node server. On Windows, start Ollama and run `ollama pull qwen2.5:3b` in PowerShell. With an existing local AgentFlow installation, choose the template first and then **Model → Local Ollama · Qwen2.5 3B**, save the draft and start a test. The fixed destination is the Ollama chat API on 127.0.0.1 port 11434. If a system HTTP proxy is configured, include 127.0.0.1 and localhost in NO_PROXY. A cloud-hosted AgentFlow instance requires its own co-located Ollama runtime. No paid-provider fallback occurs. Local inference speed, GPU acceleration and model quality require verification on the target machine. Review the model's license before a commercial rollout.

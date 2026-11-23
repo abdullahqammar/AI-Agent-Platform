@@ -1,4 +1,5 @@
 "use client";
+import { approvedModel } from "@/lib/assistant/config";
 import { useState } from "react";
 import {
   businessTemplate,
@@ -54,7 +55,12 @@ export function Editor({ initial }: { initial: AssistantConfig }) {
           />
         </label>
       ))}
-      <p>Approved model · {config.model}</p>
+      <label>Model
+        <select value={config.model} onChange={event => set({...config, model: approvedModel.parse(event.target.value)})}>
+          <option value="gpt-4.1-mini">OpenAI · GPT-4.1 mini</option>
+          <option value="qwen2.5:3b">Local Ollama · Qwen2.5 3B</option>
+        </select>
+      </label>
       <label>
         <input
           type="checkbox"
