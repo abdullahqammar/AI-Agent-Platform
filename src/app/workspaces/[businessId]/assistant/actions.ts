@@ -5,6 +5,7 @@ import { z } from "zod";
 import { assistantConfig } from "@/lib/assistant/config";
 import { generateAnswer, LocalProviderError, ProviderCreditsExhausted } from "@/lib/assistant/provider";
 import { messages } from "@/db/schema";
+import { assignableFacts } from "../knowledge/library";
 import { asAssistantManager } from "./store";
 
 export async function act(business: string, form: FormData) {
@@ -31,12 +32,11 @@ export async function act(business: string, form: FormData) {
       );
       const selected = config.knowledge.flatMap(source => source.shared ? [source.shared.id] : []);
       if (selected.length) {
-        const facts = await tx.execute<{ id: string; key: string; revision: number; title: string; body: string }>(sql`
-          select id,library_key as key,revision,title,body from knowledge_documents
-          where business_id=${business} and status='ready' and library_key is not null
-          and id in (${sql.join(selected.map(id => sql`${id}`), sql`,`)})`);
-        if (facts.length !== selected.length || new Set(facts.map(fact => fact.key)).size !== facts.length)
-          throw Error("Shared fact unavailable");
+        const facts = await assignableFacts(tx, business, selected);
+        if (facts.length !== selected.length || new Set(facts.map(fact => fact.key)).size !== facts.length) {
+          notice = "knowledgeChanged";
+          return;
+        }
         const byId = new Map(facts.map(fact => [fact.id, fact]));
         config.knowledge = config.knowledge.map(source => {
           if (!source.shared) return source;
@@ -75,6 +75,11 @@ export async function act(business: string, form: FormData) {
     const config = action === "disable" || action === "handoff" ? null : assistantConfig.parse(row.settings);
     if (action === "publish" || action === "disable") {
       if (action === "publish" && config) {
+        const ids = config.knowledge.flatMap(source => source.shared ? [source.shared.id] : []);
+        if (ids.length && (await assignableFacts(tx, business, ids)).length !== ids.length) {
+          notice = "knowledgeChanged";
+          return;
+        }
         if (current.tested_version !== version)
           throw Error("Test this version successfully before publishing");
         await tx.execute(
@@ -175,9 +180,16 @@ export async function act(business: string, form: FormData) {
       );
       await audit("assistant.handoff.requested", thread);
     }
+  }).catch((error: unknown) => {
+    const conflict = z.object({ code: z.literal("40001") });
+    if (!["save", "publish"].includes(action) || !(conflict.safeParse(error).success || conflict.safeParse(error instanceof Error && error.cause).success)) throw error;
+    agent = z.uuid().nullable().parse(form.get("agent"));
+    notice = "knowledgeChanged";
   });
-  const params = new URLSearchParams({ agent: String(agent) });
+  const params = new URLSearchParams();
+  if (agent) params.set("agent", agent);
   if (thread) params.set("thread", thread);
-  if (notice) params.set("providerError", notice);
+  if (notice === "knowledgeChanged") params.set("knowledgeChanged", "1");
+  else if (notice) params.set("providerError", notice);
   redirect(`/workspaces/${business}/assistant?${params}`);
 }

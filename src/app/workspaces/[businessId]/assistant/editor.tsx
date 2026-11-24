@@ -1,7 +1,7 @@
 "use client";
 import { approvedModel, modelCatalog } from "@/lib/assistant/config";
 import { useFormStatus } from "react-dom";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import {
   businessTemplate,
   dentalExample,
@@ -15,12 +15,18 @@ export function SendMessage({ disabled }: { disabled: boolean }) {
   </button>;
 }
 
-type Fact = { id: string; key: string; revision: number; title: string; body: string };
+// Controlled fields and the submitted configuration must become editable together.
+const subscribeToHydration = () => () => {};
+const clientReady = () => true;
+const serverReady = () => false;
+
+type Fact = { id: string; key: string; revision: number; title: string; body: string; cutoff: number };
 function snapshot(fact: Fact) {
   return { title: fact.title, text: fact.body, shared: { id: fact.id, key: fact.key, revision: fact.revision } };
 }
 
 export function Editor({ initial, facts, libraryPath }: { initial: AssistantConfig; facts: Fact[]; libraryPath: string }) {
+  const ready = useSyncExternalStore(subscribeToHydration, clientReady, serverReady);
   const [config, set] = useState(initial);
   const labels = {
     name: "Assistant name", businessProfile: "Business profile", role: "Role", purpose: "Responsibilities",
@@ -33,7 +39,7 @@ export function Editor({ initial, facts, libraryPath }: { initial: AssistantConf
     </label>;
   }
   return (
-    <fieldset className="editor-fields">
+    <fieldset className="editor-fields" disabled={!ready} aria-busy={!ready}>
       <legend>Assistant configuration</legend>
       <label>
         Load template{" "}
@@ -78,7 +84,7 @@ export function Editor({ initial, facts, libraryPath }: { initial: AssistantConf
             if (fact) set({ ...config, knowledge: [...config.knowledge, snapshot(fact)] });
           }}>
           <option value="">Choose a shared fact</option>
-          {facts.filter(fact => !config.knowledge.some(source => source.shared?.key === fact.key)).map(fact =>
+          {facts.filter(fact => fact.revision > fact.cutoff && !config.knowledge.some(source => source.shared?.key === fact.key)).map(fact =>
             <option key={fact.id} value={fact.id}>{fact.title} · revision {fact.revision}</option>)}
         </select>
       </label>
@@ -89,7 +95,8 @@ export function Editor({ initial, facts, libraryPath }: { initial: AssistantConf
           <fieldset key={index}>
             <legend>Assigned source {index + 1}</legend>
             {source.shared && <p>Shared fact · revision {source.shared.revision}</p>}
-            {latest && latest.id !== source.shared?.id && <button type="button" onClick={() => set({
+            {latest && source.shared && source.shared.revision <= latest.cutoff && <p>This revision was retired. Remove or replace it before saving or publishing.</p>}
+            {latest && latest.revision > latest.cutoff && latest.id !== source.shared?.id && <button type="button" onClick={() => set({
               ...config, knowledge: config.knowledge.map((item, i) => i === index ? snapshot(latest) : item),
             })}>Use revision {latest.revision} of {latest.title}</button>}
             {(["title", "text"] as const).map((key) => (
@@ -139,6 +146,7 @@ export function Editor({ initial, facts, libraryPath }: { initial: AssistantConf
       >
         Add source
       </button>
+      <button name="action" value="save">Save new draft version</button>
       <input type="hidden" name="config" value={JSON.stringify(config)} />
     </fieldset>
   );

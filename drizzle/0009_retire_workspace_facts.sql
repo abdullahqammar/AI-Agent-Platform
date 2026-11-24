@@ -1,0 +1,1 @@
+ALTER TABLE "knowledge_documents" ADD COLUMN "retired_through" integer DEFAULT 0 NOT NULL;

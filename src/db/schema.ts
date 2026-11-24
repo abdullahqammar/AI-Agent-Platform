@@ -312,6 +312,7 @@ export const knowledgeDocuments = pgTable("knowledge_documents", {
   title: text("title").notNull(),
   sourceRef: text("source_ref").notNull(),
   libraryKey: uuid("library_key"),
+  retiredThrough: integer("retired_through").notNull().default(0),
   revision: integer("revision"),
   body: text("body"),
   status: documentStatus("status").notNull().default("pending"),

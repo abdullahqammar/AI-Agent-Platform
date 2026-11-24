@@ -63,6 +63,8 @@ async function Studio({ params, searchParams }: Props) {
   const settings = row?.settings;
   const retired = usesRetiredModel(settings);
   const config = row ? assistantConfig.parse(retired ? { ...settings, model: "qwen2.5:7b" } : settings) : businessTemplate;
+  const hasWithdrawnSource = config.knowledge.some(({ shared }) =>
+    shared && data.facts.some(fact => fact.key === shared.key && fact.cutoff >= shared.revision));
   const formAction = act.bind(null, businessId);
   const staffAction = data.assignment && agent && thread ? respond.bind(null, businessId, agent, thread, String(data.assignment.id), randomUUID()) : undefined;
   const fields = (
@@ -86,6 +88,7 @@ async function Studio({ params, searchParams }: Props) {
         ))}
       </nav>
       <div className="workbench-content">
+      {query.knowledgeChanged && <p role="alert">The draft or its shared knowledge changed. Review the sources before saving or publishing again.</p>}
       {current && (
         <p>
           {current.published_version ? `${current.active ? "Enabled" : "Disabled"} · Published version ${current.published_version}` : "Draft · Ready for testing"}
@@ -163,11 +166,8 @@ async function Studio({ params, searchParams }: Props) {
         <summary>{agent ? "Edit configuration and knowledge" : "Create an assistant"}</summary>
       <form action={formAction}>
         {fields}
-        {retired && <p>This version used Qwen2.5 3B. Save a new draft and test Qwen2.5 7B before publishing.</p>}
+        {retired && <p>This version used Qwen2.5 3B. Choose an available model, save a new draft and test it before publishing.</p>}
         <Editor key={String(agent) + String(row?.version)} initial={config} facts={data.facts} libraryPath={`/workspaces/${businessId}/knowledge`} />
-        <button name="action" value="save">
-          Save new draft version
-        </button>
       </form>
       </details>
       {agent && <>
@@ -198,12 +198,12 @@ async function Studio({ params, searchParams }: Props) {
         <form action={formAction}>
             {fields}
             <p>
-              {current?.tested_version === row.version ? "This version has completed a test reply." : "Get a successful test reply to unlock publishing."}
+              {hasWithdrawnSource ? "Replace retired knowledge in a new draft and test it before publishing." : current?.tested_version === row.version ? "This version has completed a test reply." : "Get a successful test reply to unlock publishing."}
             </p>
             <button
               name="action"
               value="publish"
-              disabled={retired || current?.tested_version !== row.version}
+              disabled={retired || hasWithdrawnSource || current?.tested_version !== row.version}
             >
               Publish and enable
             </button>

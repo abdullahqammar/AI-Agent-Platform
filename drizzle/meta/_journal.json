@@ -64,6 +64,13 @@
       "when": 1795512758915,
       "tag": "0008_workspace_facts",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1795522801399,
+      "tag": "0009_retire_workspace_facts",
+      "breakpoints": true
     }
   ]
 }
