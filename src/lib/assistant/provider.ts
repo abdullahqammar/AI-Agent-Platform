@@ -53,7 +53,7 @@ export async function generateAnswer(
       {
         role: "user",
         content: JSON.stringify({
-          assignedKnowledge: selected.map(entry => entry.source),
+          assignedKnowledge: selected.map(({ source }) => ({ title: source.title, text: source.text })),
           priorConversation: history,
           customerMessage: message,
         }),

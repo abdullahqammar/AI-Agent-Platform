@@ -27,8 +27,23 @@ export async function act(business: string, form: FormData) {
     if (agent && !current) throw Error("Agent unavailable");
     if (action === "save") {
       const config = assistantConfig.parse(
-        JSON.parse(z.string().max(90000).parse(form.get("config"))),
+        JSON.parse(z.string().max(950000).parse(form.get("config"))),
       );
+      const selected = config.knowledge.flatMap(source => source.shared ? [source.shared.id] : []);
+      if (selected.length) {
+        const facts = await tx.execute<{ id: string; key: string; revision: number; title: string; body: string }>(sql`
+          select id,library_key as key,revision,title,body from knowledge_documents
+          where business_id=${business} and status='ready' and library_key is not null
+          and id in (${sql.join(selected.map(id => sql`${id}`), sql`,`)})`);
+        if (facts.length !== selected.length || new Set(facts.map(fact => fact.key)).size !== facts.length)
+          throw Error("Shared fact unavailable");
+        const byId = new Map(facts.map(fact => [fact.id, fact]));
+        config.knowledge = config.knowledge.map(source => {
+          if (!source.shared) return source;
+          const fact = byId.get(source.shared.id)!;
+          return { title: fact.title, text: fact.body, shared: { id: fact.id, key: fact.key, revision: fact.revision } };
+        });
+      }
       if (!agent) {
         const [row] = await tx.execute(
           sql`insert into agents(business_id,name,active) values(${business},${config.name},false) returning id`,
@@ -38,6 +53,12 @@ export async function act(business: string, form: FormData) {
       await tx.execute(sql`insert into agent_configurations(business_id,agent_id,version,identity,instructions,tone,languages,settings)
         select ${business},${agent},coalesce(max(version),0)+1,${config.role},${config.instructions},${config.tone},ARRAY[${config.language}]::text[],${JSON.stringify(config)}::jsonb
         from agent_configurations where agent_id=${agent}`);
+      await tx.execute(sql`delete from agent_knowledge a using knowledge_documents d
+        where a.business_id=${business} and a.agent_id=${agent} and d.business_id=a.business_id
+        and d.id=a.document_id and d.library_key is not null`);
+      for (const id of selected) {
+        await tx.execute(sql`insert into agent_knowledge(business_id,agent_id,document_id) values(${business},${agent},${id})`);
+      }
       await audit("assistant.draft.saved", agent);
       return;
     }

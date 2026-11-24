@@ -27,7 +27,7 @@ async function Dashboard({ searchParams }: DashboardProps) {
   const studio = `/workspaces/${business.id}/assistant`;
   return <main className="workspace">
     <aside className="sidebar"><Brand /><a className="workspace-switch" aria-label="Switch workspace" href="/workspaces"><Building2 size={20} /><div><strong>{business.name}</strong><span>{role}</span></div></a>
-      <nav aria-label="Workspace"><a className="nav-active" href={`/dashboard?businessId=${business.id}`} aria-current="page"><LayoutDashboard size={18} />Overview</a><a href={`/workspaces/${business.id}/team`}><Users size={18} />Team</a>{workforce && <><a href={`/workspaces/${business.id}/assistant`}><Bot size={18} />AI assistants</a><a href={`/workspaces/${business.id}/inbox`}><MessageSquare size={18} />Staff handoffs</a></>}</nav>
+      <nav aria-label="Workspace"><a className="nav-active" href={`/dashboard?businessId=${business.id}`} aria-current="page"><LayoutDashboard size={18} />Overview</a><a href={`/workspaces/${business.id}/team`}><Users size={18} />Team</a>{workforce && <><a href={`/workspaces/${business.id}/assistant`}><Bot size={18} />AI assistants</a><a href={`/workspaces/${business.id}/knowledge`}>Shared knowledge</a><a href={`/workspaces/${business.id}/inbox`}><MessageSquare size={18} />Staff handoffs</a></>}</nav>
       <div className="sidebar-account"><strong>{session.user.name}</strong><span>{session.user.email}</span><Logout /></div>
     </aside>
     <section className="workspace-main"><header><span>Workspace overview</span><span className="role-label">{role}</span></header>

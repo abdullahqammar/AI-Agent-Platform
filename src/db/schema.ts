@@ -311,11 +311,15 @@ export const knowledgeDocuments = pgTable("knowledge_documents", {
   createdAt: createdAt(),
   title: text("title").notNull(),
   sourceRef: text("source_ref").notNull(),
+  libraryKey: uuid("library_key"),
+  revision: integer("revision"),
+  body: text("body"),
   status: documentStatus("status").notNull().default("pending"),
   processedAt: instant("processed_at"),
 }, (t) => [
   unique().on(t.businessId, t.id),
   index().on(t.businessId, t.status),
+  unique("workspace_fact_revision").on(t.businessId, t.libraryKey, t.revision),
 ]).enableRLS();
 
 export const agentKnowledge = pgTable("agent_knowledge", {

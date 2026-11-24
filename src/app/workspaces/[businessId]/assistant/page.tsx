@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { latestFacts } from "../knowledge/library";
 import { respond } from "../inbox/respond";
 import Link from "next/link";
 import { Fragment, Suspense } from "react";
@@ -47,7 +48,8 @@ async function Studio({ params, searchParams }: Props) {
       : [];
     const [assignment] = selected?.needs_human ? await tx.execute(sql`select id from conversation_assignments
       where business_id=${businessId} and conversation_id=${thread} and membership_id=${membershipId} and ended_at is null`) : [];
-    return { agents, versions, threads, selected, messages, assignment };
+    const facts = await latestFacts(tx, businessId);
+    return { agents, versions, threads, selected, messages, assignment, facts };
   }).catch((error) => {
     if (error instanceof TenantAccessDenied) notFound();
     throw error;
@@ -162,7 +164,7 @@ async function Studio({ params, searchParams }: Props) {
       <form action={formAction}>
         {fields}
         {retired && <p>This version used Qwen2.5 3B. Save a new draft and test Qwen2.5 7B before publishing.</p>}
-        <Editor key={String(agent) + String(row?.version)} initial={config} />
+        <Editor key={String(agent) + String(row?.version)} initial={config} facts={data.facts} libraryPath={`/workspaces/${businessId}/knowledge`} />
         <button name="action" value="save">
           Save new draft version
         </button>

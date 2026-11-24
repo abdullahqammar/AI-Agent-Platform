@@ -5,7 +5,17 @@ import { generateAnswer } from "../src/lib/assistant/provider.ts";
 
 test("assigned sources and history stay below the instruction boundary", async () => {
   const result = await generateAnswer(
-    dentalExample,
+    {
+      ...dentalExample,
+      knowledge: dentalExample.knowledge.map(source => ({
+        ...source,
+        shared: {
+          id: "c44ce2ba-fd1c-46b2-b9fa-2c2c35bb158c",
+          key: "99e2d937-05ed-45d8-a101-caa463fee9d0",
+          revision: 1,
+        },
+      })),
+    },
     [],
     "When are you open?",
     async (url, init) => {

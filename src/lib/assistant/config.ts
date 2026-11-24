@@ -26,6 +26,7 @@ export const assistantConfig = z.strictObject({
   knowledge: z
     .array(
       z.strictObject({
+        shared: z.object({ id: z.uuid(), key: z.uuid(), revision: z.number().int().positive() }).optional(),
         title: field,
         text: z.string().trim().min(1).max(6000),
       }),

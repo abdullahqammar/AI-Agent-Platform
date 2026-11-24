@@ -68,3 +68,11 @@ Open a successful new playground reply and expand **Knowledge sent with this rep
 Migration 0007 adds one nullable integer-array column on messages. Existing workspaces and transcripts require no backfill. The existing tenant and assistant-manager checks protect the disclosure. Hostinger and n8n workflow evidence is recorded in the competitor research.
 
 Verified with 42 automated tests (database 8, migration 4, authentication 8, workspace 13, provider contracts 9), TypeScript, ESLint and the production build. At 1440×900 and 390×844 Chromium verified that test evidence survives reload and later source edits, is absent in published chats, and remains inside the existing protected studio. Both assistant and team journeys passed. The browser fixture simulated model responses.
+
+## Shared workspace facts
+
+From Overview, owners and Assistant managers can open **Shared knowledge**, add text facts, and revise them. In an assistant draft, **Add a workspace fact** attaches a specific revision. If a fact changes, **Use revision …** in the editor adopts it for the next saved draft. That draft must be tested before publishing. Other agents, previously published versions and conversations keep their original information. Assistant-specific sources can coexist with library facts within the existing 12-source limit. Workspace viewers cannot open the library.
+
+Migration 0008 extends knowledge_documents with nullable fact text, stable library identity, revision number and a uniqueness constraint per workspace/fact/revision. A concurrent editor who submits an older revision sees a conflict. Draft saves read each selected source from the tenant database, snapshot its authoritative content and synchronize the latest draft’s library links in agent_knowledge. Only title and text enter the provider’s untrusted knowledge block. No file ingestion or external provider connection was added.
+
+Chromium checked the shared-fact workflow with a synthetic Reception and Sales assistant at 1440×900 and 390×844. Both began with the same revision. After a library edit, the published Reception conversation still answered with its saved text; Sales adopted the update only after an explicit draft save. Stale edits, viewer access and outside-account access were checked. Model generation used the local test fixture. The database, API and browser persistence were real.
