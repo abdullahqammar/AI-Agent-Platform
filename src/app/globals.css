@@ -131,3 +131,7 @@ nav a,nav > span { display: flex; align-items: center; gap: 11px; padding: 10px 
 .workforce-directory li span { margin-left: auto; white-space: nowrap; }
 .workforce-directory a:focus-visible { outline: 3px solid #315f9a; outline-offset: 3px; }
 .workforce-directory p { margin: .75rem 0 0; }
+.test-knowledge { padding: .5rem 0; color: #34475c; }
+.assistant-workbench .test-knowledge summary { font-size: .9rem; }
+.test-knowledge dt { font-weight: 650; margin-top: .65rem; }
+.test-knowledge dd { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }

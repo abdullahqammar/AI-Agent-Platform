@@ -19,3 +19,5 @@ In-app handoff triage now supports workspace-wide discovery, claiming and releas
 ## Benchmark-informed sequence
 
 The live dashboard directory closes the gap between creating an assistant and finding it again. First verify a grounded reply, persisted history and a model-requested handoff with an authorized live provider. Extend shared business knowledge and add safe retrieval inspection before file ingestion or channel rollout. Platform admin authority precedes Site Identity and centrally enforced availability. Workspace entitlements, credential ownership and idempotent usage records precede commercial activation and bounded orchestration. See [gap analysis](AGENTFLOW_PRODUCT_GAP_ANALYSIS.md) for decisions and [UX benchmark](AGENTFLOW_UX_UI_BENCHMARK.md) for acceptance.
+
+The playground now records the knowledge supplied to successful test replies. Next, let owners manage shared business facts once and explicitly assign them to assistants, preserving the knowledge snapshot of every tested or published version.

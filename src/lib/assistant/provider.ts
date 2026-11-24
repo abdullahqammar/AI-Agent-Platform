@@ -26,13 +26,13 @@ export async function generateAnswer(
   if (!local && !key) throw new Error("Provider unavailable");
   const { knowledge, ...instructions } = config;
   const terms = new Set(message.toLowerCase().match(/[\p{L}\p{N}]{3,}/gu) ?? []);
-  const ranked = knowledge.map(source => {
+  const ranked = knowledge.map((source, index) => {
     const words = new Set((source.title + " " + source.text).toLowerCase().match(/[\p{L}\p{N}]+/gu));
     const score = [...terms].filter(term => words.has(term)).length;
-    return { source, score };
+    return { source, score, index };
   }).sort((left, right) => right.score - left.score);
   const relevant = ranked.filter(entry => entry.score > 0);
-  const context = (relevant.length ? relevant : ranked).slice(0, 4).map(entry => entry.source);
+  const selected = (relevant.length ? relevant : ranked).slice(0, 4);
   const payload = {
     model: config.model,
     max_completion_tokens: 600,
@@ -53,7 +53,7 @@ export async function generateAnswer(
       {
         role: "user",
         content: JSON.stringify({
-          assignedKnowledge: context,
+          assignedKnowledge: selected.map(entry => entry.source),
           priorConversation: history,
           customerMessage: message,
         }),
@@ -91,6 +91,7 @@ export async function generateAnswer(
   const data = await response.json();
   return {
     ...output.parse(JSON.parse(data.choices[0].message.content)),
+    knowledgeIndexes: selected.map(entry => entry.index),
     usage: {
       model: config.model,
       inputTokens: z

@@ -60,3 +60,11 @@ Claim a conversation in Staff handoffs and open its transcript. The current assi
 Migration 0006 adds a nullable staff membership to messages and enforces same-business attribution. Existing messages retain their original speakers. Before updating a local server, review drizzle/0006_staff_replies.sql and apply it using `npm run db:migrate`. This is an additive upgrade to the existing database.
 
 Verified locally with database (8), migrations (4), auth (8), workspace (13) and provider (8) tests. Chromium exercised both manager and owner sessions at 1440×900 and 390×844, including persisted attributed replies, denied stale submissions, closure and the local 4B selection. Provider responses in automated tests were simulated. A live Qwen3.5 4B turn remains a separate acceptance check.
+
+## Inspect knowledge sent during a test
+
+Open a successful new playground reply and expand **Knowledge sent with this reply** to read the exact source titles and text supplied to the provider. Source positions are captured by the server from the outgoing request and resolved against the thread’s saved assistant version. This shows what the model received; individual claims in the response still require review. The disclosure stays out of published chats, staff replies and old records without retrieval data. No second model call is needed.
+
+Migration 0007 adds one nullable integer-array column on messages. Existing workspaces and transcripts require no backfill. The existing tenant and assistant-manager checks protect the disclosure. Hostinger and n8n workflow evidence is recorded in the competitor research.
+
+Verified with 42 automated tests (database 8, migration 4, authentication 8, workspace 13, provider contracts 9), TypeScript, ESLint and the production build. At 1440×900 and 390×844 Chromium verified that test evidence survives reload and later source edits, is absent in published chats, and remains inside the existing protected studio. Both assistant and team journeys passed. The browser fixture simulated model responses.

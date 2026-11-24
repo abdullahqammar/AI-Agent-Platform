@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { assistantConfig } from "@/lib/assistant/config";
 import { generateAnswer, LocalProviderError, ProviderCreditsExhausted } from "@/lib/assistant/provider";
+import { messages } from "@/db/schema";
 import { asAssistantManager } from "./store";
 
 export async function act(business: string, form: FormData) {
@@ -124,9 +125,15 @@ export async function act(business: string, form: FormData) {
       direction: "inbound" | "outbound",
       body: string,
       usage: object | null,
+      knowledgeIndexes: number[] | null = null,
     ) =>
-      tx.execute(sql`insert into messages(business_id,conversation_id,channel_id,direction,body,usage,occurred_at)
-      values(${business},${thread},${String(conversation.channel_id)},${direction},${body},${JSON.stringify(usage)}::jsonb,clock_timestamp())`);
+      tx.insert(messages).values({
+        businessId: business,
+        conversationId: String(conversation.id),
+        channelId: String(conversation.channel_id),
+        direction, body, usage, knowledgeIndexes,
+        occurredAt: sql`clock_timestamp()`,
+      });
     await append("inbound", message, null);
     let result;
     try {
@@ -136,7 +143,7 @@ export async function act(business: string, form: FormData) {
       await audit(notice === "billing" ? "assistant.provider.quota_exhausted" : "assistant.provider.failed", thread);
       return;
     }
-    await append("outbound", result.answer, result.usage);
+    await append("outbound", result.answer, result.usage, conversation.test_mode ? result.knowledgeIndexes : null);
     if (conversation.test_mode)
       await tx.execute(
         sql`update agents set tested_version=${version} where id=${agent}`,

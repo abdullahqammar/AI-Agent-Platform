@@ -243,6 +243,7 @@ export const conversations = pgTable("conversations", {
 ]).enableRLS();
 
 export const messages = pgTable("messages", {
+  knowledgeIndexes: integer("knowledge_indexes").array(),
   staffMembershipId: uuid("staff_membership_id"),
   usage: jsonb("usage"),
   id: id(),

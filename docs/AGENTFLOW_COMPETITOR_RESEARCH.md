@@ -45,3 +45,15 @@ Each cell records what the cited sample, screenshot or guide supports. A dash me
 | Onboarding | Recipes | Agent example | Connect and invite flows | Guided environment selection | Guided lab | Provider setup |
 | Responsive/mobile | — | — | — | — | — | — |
 | Security/enterprise | Action guards in sample | Tool approval | Credential visibility | Governance in training | Run-as identity | Restricted provider management |
+
+## Hostinger and n8n workflow follow-up
+
+Reviewed 24 November 2026. Hostinger’s public Horizons page was blocked by the environment proxy. The evidence below comes from official repositories; it covers documented workflows. No Hostinger account, hPanel/Horizons session, n8n Cloud account, hosting purchase or deployment was used.
+
+| Source | What the operator actually does | AgentFlow decision |
+|---|---|---|
+| Hostinger CLI | Check the active credential with auth status. Run a deployment dry run to inspect the resolved website, source and file scope before applying changes. Preview, reachable and deployed are distinct states. | Name the workspace, version and selected model in the playground. Show the inputs actually sent during a test. Treat public channel verification and in-app publication as separate milestones. |
+| Hostinger’s n8n integration | Create a credential, choose the resource operation, enter its required inputs and execute the workflow. Credential testing is a separate operation. | In the channel roadmap, separate connection verification from assigning an assistant and enabling a customer-facing operation. Adopt the sequence only when each server-side check works. |
+| n8n execution debugging | Open a recorded execution to inspect it. During development, pin or mock data to repeat tests against the same inputs. Production execution has different data semantics. | Attach inspection to an individual test reply. Resolve the recorded source selection against that thread’s saved configuration version. Do not rerun a model or trigger a business action simply to inspect a prior turn. |
+
+Sources: [Hostinger CLI](https://github.com/hostinger/api-cli/tree/65440a7b191b6bf4573419a578535d10635bd2ac) · [Hostinger integration workflow](https://github.com/hostinger/api-n8n-node/tree/78bc53df1dda923e033c85e38000df88d327d82b) · [n8n execution debugging](https://github.com/n8n-io/n8n-docs/blob/bee4fa104a38fdf4b948bcb02f3a6eed8cce7306/docs/build/understand-workflows/understand-executions/debug-executions.md) · [n8n test data](https://github.com/n8n-io/n8n-docs/blob/bee4fa104a38fdf4b948bcb02f3a6eed8cce7306/docs/build/work-with-data/pin-and-mock-data.md).

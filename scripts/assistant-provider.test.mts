@@ -33,6 +33,7 @@ test("assigned sources and history stay below the instruction boundary", async (
     },
     "test-only",
   );
+  assert.deepEqual(result.knowledgeIndexes, [0]);
   assert.equal(result.usage.outputTokens, 12);
   assert.equal(result.handoff, false);
 });
@@ -113,4 +114,20 @@ test("Ollama failures distinguish connection, timeout and missing model", async 
   await assert.rejects(generateAnswer(config, [], "Hello", async () => new Response(null, { status: 404 })), { reason: "modelMissing" });
   await assert.rejects(generateAnswer(config, [], "Hello", async () => { throw new TypeError("fetch failed"); }), { reason: "offline" });
   await assert.rejects(generateAnswer(config, [], "Hello", async () => { throw new DOMException("expired", "TimeoutError"); }), { reason: "timeout" });
+});
+
+test("testable retrieval order survives duplicate titles and the four-source fallback limit", async () => {
+  const knowledge = Array.from({ length: 6 }, (_, index) => ({
+    title: "Information", text: index === 5 ? "Returns accepted" : `Fact ${index}`,
+  }));
+  for (const [question, expected] of [["returns", [5]], ["hello", [0, 1, 2, 3]]] as const) {
+    const result = await generateAnswer({ ...dentalExample, knowledge }, [], question, async (_url, init) => {
+      const payload = JSON.parse(String(init?.body));
+      const context = JSON.parse(payload.messages.at(-1).content);
+      assert.deepEqual(context.assignedKnowledge, expected.map(index => knowledge[index]));
+      return Response.json({ choices: [{ message: { content: '{"answer":"OK","handoff":false}' } }],
+        usage: { prompt_tokens: 12, completion_tokens: 4 } });
+    }, "test-only");
+    assert.deepEqual(result.knowledgeIndexes, expected);
+  }
 });

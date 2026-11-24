@@ -74,6 +74,7 @@ export function Editor({ initial }: { initial: AssistantConfig }) {
               {key === "title" ? "Source name" : "Information"}
               <textarea
                 required
+                aria-label={key === "title" ? "Source name" : "Information"}
                 value={source[key]}
                 maxLength={key === "title" ? 2000 : 6000}
                 onChange={(e) =>

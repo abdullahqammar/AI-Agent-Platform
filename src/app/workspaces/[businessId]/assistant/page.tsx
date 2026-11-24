@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { respond } from "../inbox/respond";
 import Link from "next/link";
-import { Suspense } from "react";
+import { Fragment, Suspense } from "react";
 import { notFound } from "next/navigation";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
@@ -42,7 +42,7 @@ async function Studio({ params, searchParams }: Props) {
     const selected = threads.find((t) => t.id === thread);
     const messages = selected
       ? await tx.execute(
-          sql`select m.direction,m.body,m.staff_membership_id,s.display_name from messages m left join business_memberships s on s.business_id=m.business_id and s.id=m.staff_membership_id where m.conversation_id=${thread} order by m.occurred_at,m.id`,
+          sql`select m.id,m.direction,m.body,m.knowledge_indexes,m.staff_membership_id,s.display_name from messages m left join business_memberships s on s.business_id=m.business_id and s.id=m.staff_membership_id where m.conversation_id=${thread} order by m.occurred_at,m.id`,
         )
       : [];
     const [assignment] = selected?.needs_human ? await tx.execute(sql`select id from conversation_assignments
@@ -93,13 +93,24 @@ async function Studio({ params, searchParams }: Props) {
       {thread && (
         <section className="chat-panel">
           <h2>Conversation with {String(data.selected?.name)}</h2>
-          {data.messages.map((m, i) => (
-            <p key={i} className={m.direction === "inbound" ? "customer-message" : "assistant-message"}>
+          {data.messages.map(m => (
+            <Fragment key={String(m.id)}>
+            <p className={m.direction === "inbound" ? "customer-message" : "assistant-message"}>
               <strong>
                 {m.staff_membership_id ? "Staff · " + String(m.display_name ?? "Workspace member") : m.direction === "inbound" ? "Customer" : "Assistant"}
               </strong>{" "}
               {String(m.body)}
             </p>
+            {data.selected?.test_mode === true && data.selected.agent_version === row?.version && Array.isArray(m.knowledge_indexes) && m.knowledge_indexes.length > 0 && (
+              <details className="test-knowledge">
+                <summary>Knowledge sent with this reply ({m.knowledge_indexes.length})</summary>
+                <dl>{m.knowledge_indexes.map((index: number) => {
+                  const source = config.knowledge[index];
+                  return source && <Fragment key={index}><dt>{source.title}</dt><dd>{source.text}</dd></Fragment>;
+                })}</dl>
+              </details>
+            )}
+            </Fragment>
           ))}
           {query.providerError && (
             <p role="alert">
