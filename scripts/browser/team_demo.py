@@ -98,6 +98,8 @@ with sync_playwright() as pw:
         expect(member.get_by_text('Viewer', exact=True).first).to_be_visible()
         expect(member.get_by_role('region', name='Your AI workforce')).to_have_count(0)
         expect(member.get_by_role('link', name='Shared knowledge')).to_have_count(0)
+        diagnostic = studio.replace('/workspaces/', '/api/workspaces/').rsplit('/', 1)[0] + '/local-model?model=qwen3.5:4b'
+        assert member.request.get(diagnostic).status == 404
         member.goto(studio.rsplit('/', 1)[0] + '/knowledge')
         expect(member.get_by_text('404', exact=True)).to_be_visible()
         member.goto(studio)

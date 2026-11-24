@@ -1,4 +1,5 @@
 "use client";
+import { LocalModelCheck } from "./local-model-check";
 import { approvedModel, modelCatalog } from "@/lib/assistant/config";
 import { useFormStatus } from "react-dom";
 import { useState, useSyncExternalStore } from "react";
@@ -25,7 +26,7 @@ function snapshot(fact: Fact) {
   return { title: fact.title, text: fact.body, shared: { id: fact.id, key: fact.key, revision: fact.revision } };
 }
 
-export function Editor({ initial, facts, libraryPath }: { initial: AssistantConfig; facts: Fact[]; libraryPath: string }) {
+export function Editor({ initial, facts, businessId }: { initial: AssistantConfig; facts: Fact[]; businessId: string }) {
   const ready = useSyncExternalStore(subscribeToHydration, clientReady, serverReady);
   const [config, set] = useState(initial);
   const labels = {
@@ -68,6 +69,7 @@ export function Editor({ initial, facts, libraryPath }: { initial: AssistantConf
           {approvedModel.options.map(model => <option key={model} value={model}>{modelCatalog[model].label}</option>)}
         </select>
       </label>
+      {modelCatalog[config.model].provider === "ollama" && <LocalModelCheck key={config.model} businessId={businessId} model={config.model} />}
       <label>
         <input
           type="checkbox"
@@ -88,7 +90,7 @@ export function Editor({ initial, facts, libraryPath }: { initial: AssistantConf
             <option key={fact.id} value={fact.id}>{fact.is_faq ? "FAQ · " : ""}{fact.title} · revision {fact.revision}</option>)}
         </select>
       </label>
-      <a href={libraryPath}>Manage shared knowledge</a>
+      <a href={`/workspaces/${businessId}/knowledge`}>Manage shared knowledge</a>
       {config.knowledge.map((source, index) => {
         const latest = source.shared && facts.find(fact => fact.key === source.shared?.key);
         return (

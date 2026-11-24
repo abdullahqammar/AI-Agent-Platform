@@ -90,9 +90,19 @@ with sync_playwright() as pw:
         assert 'Demo tester' not in outsider.locator('body').inner_text()
         outsider.goto(inbox)
         expect(outsider.get_by_text('404', exact=True)).to_be_visible()
+        diagnostic = inbox.replace("/workspaces/", "/api/workspaces/").removesuffix("/inbox") + "/local-model"
+        assert outsider.request.get(diagnostic + "?model=qwen3.5:4b").status == 404
+        assert p.request.get(diagnostic + "?model=unknown").status == 400
         outsider.close()
         p.get_by_text('Edit configuration and knowledge').click()
         p.get_by_label('Model', exact=True).select_option('qwen3.5:4b')
+        p.get_by_role('button', name='Check local model').click()
+        expect(p.get_by_text('Ollama is running, but qwen3.5:4b is missing.', exact=False)).to_be_visible()
+        p.get_by_label('Model', exact=True).select_option('qwen2.5:7b')
+        p.get_by_role('button', name='Check local model').click()
+        expect(p.get_by_text('Ollama lists qwen2.5:7b as installed.', exact=False)).to_be_visible()
+        p.get_by_label('Model', exact=True).select_option('qwen3.5:4b')
+        expect(p.get_by_text('Ollama lists qwen2.5:7b as installed.', exact=False)).to_have_count(0)
         p.get_by_label('Load template').select_option('example')
         expect(p.get_by_label('Model', exact=True)).to_have_value('qwen3.5:4b')
         p.get_by_label('Source name', exact=True).first.fill('Revised opening hours')

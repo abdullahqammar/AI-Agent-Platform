@@ -167,7 +167,7 @@ async function Studio({ params, searchParams }: Props) {
       <form action={formAction}>
         {fields}
         {retired && <p>This version used Qwen2.5 3B. Choose an available model, save a new draft and test it before publishing.</p>}
-        <Editor key={String(agent) + String(row?.version)} initial={config} facts={data.facts} libraryPath={`/workspaces/${businessId}/knowledge`} />
+        <Editor key={String(agent) + String(row?.version)} initial={config} facts={data.facts} businessId={businessId} />
       </form>
       </details>
       {agent && <>

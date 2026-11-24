@@ -141,3 +141,25 @@ test("testable retrieval order survives duplicate titles and the four-source fal
     assert.deepEqual(result.knowledgeIndexes, expected);
   }
 });
+
+test("installation check reports the selected approved tag and sends no customer data", async () => {
+  const { checkLocalModel } = await import("../src/lib/assistant/provider.ts");
+  const tags: typeof fetch = async (url, init) => {
+    assert.equal(url, "http://127.0.0.1:11434/api/tags");
+    assert.equal(init?.method, "GET");
+    assert.equal(init?.redirect, "error");
+    assert.equal(init?.body, undefined);
+    assert.equal(init?.headers, undefined);
+    return Response.json({ models: [{ name: "qwen3.5:4b" }, { name: "private-model" }] });
+  };
+  assert.equal(await checkLocalModel("qwen3.5:4b", tags), "installed");
+  assert.equal(await checkLocalModel("qwen2.5:7b", tags), "missing");
+  await assert.rejects(checkLocalModel("gpt-4.1-mini", tags), /Expected a local model/);
+});
+
+test("unreachable or invalid model listings do not report a missing model", async () => {
+  const { checkLocalModel } = await import("../src/lib/assistant/provider.ts");
+  for (const send of [async () => { throw new TypeError(); }, async () => new Response(null, {status: 503}), async () => Response.json({})]) {
+    assert.equal(await checkLocalModel("qwen3.5:4b", send), "unavailable");
+  }
+});

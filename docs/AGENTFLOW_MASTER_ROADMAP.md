@@ -16,6 +16,19 @@ Build all stages within the agreed project. Activate commercial and advanced cap
 
 In-app handoff triage now supports workspace-wide discovery, claiming and releasing assignments. Assigned staff can now reply in-app and explicitly close the conversation.
 
+## Delivery checkpoints
+
+| Stage | Status | Next evidence |
+| --- | --- | --- |
+| Core workspaces and teams | Implemented and locally exercised | Maintain isolation and revocation checks as new surfaces are added. |
+| First AI employee | In-app drafts, publishing, shared FAQs, test history, staff handoff and a local model installation check are implemented | On the AgentFlow host with Ollama, get an answer from assigned knowledge, reload the conversation, then trigger and verify a handoff. |
+| Platform administration | Next independent engineering milestone | Establish platform-admin authority separate from workspace ownership. Verify denied direct reads and writes before releasing Site Identity editing. |
+| Stage 1 channels and business workflows | In-app channel available. External channel acceptance open | Verify WhatsApp webhook signatures, duplicate delivery handling and staff takeover using an authorized test number. |
+| Stage 2 commercial controls | Planned, unreleased | Enforce platform availability, plan entitlements and workspace preferences server-side. Verify workspace billing events and usage attribution before commercial activation. |
+| Stage 3 workforce operations | Planned, unreleased | Verify bounded multi-agent handoffs, retries, budgets, additional channels and reporting under the same permissions and feature controls. |
+
+The Windows provider test and the platform-admin work can proceed independently. A model installation check verifies the selected tag. A successful model reply and a persisted handoff are separate acceptance steps.
+
 ## Benchmark-informed sequence
 
 The live dashboard directory closes the gap between creating an assistant and finding it again. First verify a grounded reply, persisted history and a model-requested handoff with an authorized live provider. Extend shared business knowledge and add safe retrieval inspection before file ingestion or channel rollout. Platform admin authority precedes Site Identity and centrally enforced availability. Workspace entitlements, credential ownership and idempotent usage records precede commercial activation and bounded orchestration. See [gap analysis](AGENTFLOW_PRODUCT_GAP_ANALYSIS.md) for decisions and [UX benchmark](AGENTFLOW_UX_UI_BENCHMARK.md) for acceptance.

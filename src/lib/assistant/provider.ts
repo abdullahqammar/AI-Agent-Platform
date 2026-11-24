@@ -107,3 +107,19 @@ export async function generateAnswer(
     },
   };
 }
+
+// Check installation without loading weights, generating a reply or sending business data.
+export async function checkLocalModel(model: AssistantConfig["model"], send: typeof fetch = fetch) {
+  if (modelCatalog[model].provider !== "ollama") throw new Error("Expected a local model");
+  try {
+    const response = await send("http://127.0.0.1:11434/api/tags", {
+      method: "GET", redirect: "error", cache: "no-store", signal: AbortSignal.timeout(4000),
+    });
+    if (!response.ok) return "unavailable";
+    const listing = z.object({ models: z.array(z.object({ name: z.string() })) }).safeParse(await response.json());
+    if (!listing.success) return "unavailable";
+    return listing.data.models.some(entry => entry.name === model) ? "installed" : "missing";
+  } catch {
+    return "unavailable";
+  }
+}
