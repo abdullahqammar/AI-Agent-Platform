@@ -1,0 +1,2 @@
+ALTER TABLE "messages" ADD COLUMN "staff_membership_id" uuid;--> statement-breakpoint
+ALTER TABLE "messages" ADD CONSTRAINT "message_staff_tenant_fk" FOREIGN KEY ("business_id","staff_membership_id") REFERENCES "public"."business_memberships"("business_id","id") ON DELETE no action ON UPDATE no action;

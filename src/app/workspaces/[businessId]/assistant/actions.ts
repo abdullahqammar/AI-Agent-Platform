@@ -96,7 +96,7 @@ export async function act(business: string, form: FormData) {
     const [conversation] = await tx.execute(
       sql`select * from conversations where id=${thread} and agent_id=${agent} and agent_version=${version} for update`,
     );
-    if (!conversation || conversation.needs_human)
+    if (!conversation || conversation.closed_at || conversation.needs_human)
       throw Error("Conversation unavailable");
     if (action === "handoff") {
       await tx.execute(

@@ -1,6 +1,12 @@
 import { z } from "zod";
 
-export const approvedModel = z.enum(["gpt-4.1-mini", "qwen2.5:7b"]);
+export const approvedModel = z.enum(["gpt-4.1-mini", "qwen3.5:4b", "qwen2.5:7b"]);
+
+export const modelCatalog = {
+  "gpt-4.1-mini": { label: "OpenAI · GPT-4.1 mini", provider: "openai" },
+  "qwen3.5:4b": { label: "Local Ollama · Qwen3.5 4B", provider: "ollama" },
+  "qwen2.5:7b": { label: "Local Ollama · Qwen2.5 7B", provider: "ollama" },
+} as const satisfies Record<z.infer<typeof approvedModel>, { label: string; provider: "ollama" | "openai" }>;
 
 export function usesRetiredModel(settings: unknown): settings is Record<string, unknown> {
   return typeof settings === "object" && settings !== null && "model" in settings && settings.model === "qwen2.5:3b";

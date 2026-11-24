@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { AssistantConfig } from "./config.ts";
+import { modelCatalog, type AssistantConfig } from "./config.ts";
 
 export class ProviderCreditsExhausted extends Error {}
 
@@ -22,7 +22,7 @@ export async function generateAnswer(
   send: typeof fetch = fetch,
   key = process.env.AGENTFLOW_OPENAI_KEY,
 ) {
-  const local = config.model === "qwen2.5:7b";
+  const local = modelCatalog[config.model].provider === "ollama";
   if (!local && !key) throw new Error("Provider unavailable");
   const { knowledge, ...instructions } = config;
   const terms = new Set(message.toLowerCase().match(/[\p{L}\p{N}]{3,}/gu) ?? []);

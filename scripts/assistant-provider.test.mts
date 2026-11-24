@@ -91,18 +91,22 @@ test("exhausted billing credit is distinct from transient rate limiting", async 
   }
 });
 
-test("local model calls only loopback and receives no cloud credential", async () => {
-  const result = await generateAnswer({...dentalExample, model:"qwen2.5:7b"}, [], "Hours?", async (url, init) => {
+for (const model of ["qwen3.5:4b", "qwen2.5:7b"] as const) {
+test(`${model} calls only loopback and receives no cloud credential`, async () => {
+  const result = await generateAnswer({...dentalExample, model}, [], "Hours?", async (url, init) => {
     assert.equal(url, "http://127.0.0.1:11434/v1/chat/completions");
     assert.equal(new Headers(init?.headers).has("authorization"), false);
     const payload = JSON.parse(String(init?.body));
     assert.deepEqual(payload.messages.map((m: {role:string}) => m.role), ["system","user"]);
     assert.equal(payload.max_tokens,600);
+    assert.equal(payload.model, model);
     return Response.json({choices:[{message:{content:'{"answer":"Weekdays.","handoff":false}'}}],
       usage:{prompt_tokens:36,completion_tokens:8}});
   }, "");
-  assert.equal(result.usage.model,"qwen2.5:7b");
+  assert.equal(result.usage.model,model);
 });
+
+}
 
 test("Ollama failures distinguish connection, timeout and missing model", async () => {
   const config = { ...dentalExample, model: "qwen2.5:7b" } as const;

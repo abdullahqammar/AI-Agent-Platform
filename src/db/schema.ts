@@ -243,6 +243,7 @@ export const conversations = pgTable("conversations", {
 ]).enableRLS();
 
 export const messages = pgTable("messages", {
+  staffMembershipId: uuid("staff_membership_id"),
   usage: jsonb("usage"),
   id: id(),
   businessId: businessId(),
@@ -257,6 +258,7 @@ export const messages = pgTable("messages", {
   unique().on(t.businessId, t.id),
   unique().on(t.businessId, t.channelId, t.externalMessageId),
   foreignKey({ columns: [t.businessId, t.conversationId, t.channelId], foreignColumns: [conversations.businessId, conversations.id, conversations.channelId], name: "message_conversation_channel_fk" }),
+  foreignKey({ columns: [t.businessId, t.staffMembershipId], foreignColumns: [memberships.businessId, memberships.id], name: "message_staff_tenant_fk" }),
   index().on(t.businessId, t.conversationId, t.occurredAt),
 ]).enableRLS();
 

@@ -1,10 +1,12 @@
+import { randomUUID } from "node:crypto";
+import { respond } from "../inbox/respond";
 import Link from "next/link";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
 import { TenantAccessDenied } from "@/db";
-import { assistantConfig, businessTemplate, usesRetiredModel } from "@/lib/assistant/config";
+import { assistantConfig, businessTemplate, modelCatalog, usesRetiredModel } from "@/lib/assistant/config";
 import { act } from "./actions";
 import { Editor, SendMessage } from "./editor";
 import { asAssistantManager } from "./store";
@@ -23,7 +25,7 @@ async function Studio({ params, searchParams }: Props) {
   if (!ids.success) notFound();
   const { agent, thread, version } = ids.data;
   const base = `/workspaces/${businessId}/assistant`;
-  const data = await asAssistantManager(businessId, async ({ tx }) => {
+  const data = await asAssistantManager(businessId, async ({ tx, membershipId }) => {
     const agents = await tx.execute(
       sql`select id,name,active,published_version,tested_version from agents order by created_at`,
     );
@@ -34,16 +36,18 @@ async function Studio({ params, searchParams }: Props) {
       : [];
     const threads = agent
       ? await tx.execute(
-          sql`select c.id,c.agent_version,c.needs_human,c.test_mode,u.name from conversations c join customers u on u.id=c.customer_id where c.agent_id=${agent} and c.agent_version is not null order by c.created_at desc`,
+          sql`select c.id,c.agent_version,c.needs_human,c.test_mode,c.closed_at,u.name from conversations c join customers u on u.id=c.customer_id where c.agent_id=${agent} and c.agent_version is not null order by c.created_at desc`,
         )
       : [];
     const selected = threads.find((t) => t.id === thread);
     const messages = selected
       ? await tx.execute(
-          sql`select direction,body from messages where conversation_id=${thread} order by occurred_at,id`,
+          sql`select m.direction,m.body,m.staff_membership_id,s.display_name from messages m left join business_memberships s on s.business_id=m.business_id and s.id=m.staff_membership_id where m.conversation_id=${thread} order by m.occurred_at,m.id`,
         )
       : [];
-    return { agents, versions, threads, selected, messages };
+    const [assignment] = selected?.needs_human ? await tx.execute(sql`select id from conversation_assignments
+      where business_id=${businessId} and conversation_id=${thread} and membership_id=${membershipId} and ended_at is null`) : [];
+    return { agents, versions, threads, selected, messages, assignment };
   }).catch((error) => {
     if (error instanceof TenantAccessDenied) notFound();
     throw error;
@@ -58,6 +62,7 @@ async function Studio({ params, searchParams }: Props) {
   const retired = usesRetiredModel(settings);
   const config = row ? assistantConfig.parse(retired ? { ...settings, model: "qwen2.5:7b" } : settings) : businessTemplate;
   const formAction = act.bind(null, businessId);
+  const staffAction = data.assignment && agent && thread ? respond.bind(null, businessId, agent, thread, String(data.assignment.id), randomUUID()) : undefined;
   const fields = (
     <>
       {agent && <input type="hidden" name="agent" value={agent} />}
@@ -84,14 +89,14 @@ async function Studio({ params, searchParams }: Props) {
           {current.published_version ? `${current.active ? "Enabled" : "Disabled"} · Published version ${current.published_version}` : "Draft · Ready for testing"}
         </p>
       )}
-      {agent && <p className="version-model">Version {Number(row.version)} · {retired ? "Qwen2.5 3B (retired)" : config.model === "qwen2.5:7b" ? "Local Ollama · Qwen2.5 7B" : "OpenAI · GPT-4.1 mini"}</p>}
+      {agent && <p className="version-model">Version {Number(row.version)} · {retired ? "Qwen2.5 3B (retired)" : modelCatalog[config.model].label}</p>}
       {thread && (
         <section className="chat-panel">
           <h2>Conversation with {String(data.selected?.name)}</h2>
           {data.messages.map((m, i) => (
             <p key={i} className={m.direction === "inbound" ? "customer-message" : "assistant-message"}>
               <strong>
-                {m.direction === "inbound" ? "Customer" : "Assistant"}
+                {m.staff_membership_id ? "Staff · " + String(m.display_name ?? "Workspace member") : m.direction === "inbound" ? "Customer" : "Assistant"}
               </strong>{" "}
               {String(m.body)}
             </p>
@@ -101,18 +106,30 @@ async function Studio({ params, searchParams }: Props) {
               {query.providerError === "billing"
                 ? "OpenAI reports exhausted API credit or quota. Your message was saved. Check API project billing before retrying."
                 : query.providerError === "modelMissing"
-                ? "Ollama could not find Qwen2.5 7B. Run ollama pull qwen2.5:7b on the computer running AgentFlow, then send a message again."
+                ? `Ollama could not find ${config.model}. Check ollama list on the computer running AgentFlow. Select an installed model, save a draft and start a new test.`
                 : query.providerError === "offline"
-                ? "AgentFlow could not reach Ollama. Open Ollama on the computer running AgentFlow and check that ollama list shows qwen2.5:7b."
+                ? `AgentFlow could not reach Ollama. Open Ollama on the computer running AgentFlow and check that ollama list shows ${config.model}.`
                 : query.providerError === "timeout"
                 ? "Ollama took longer than 90 seconds. Try a shorter message after the model has loaded."
-                : config.model === "qwen2.5:7b"
-                ? "Ollama could not return a usable reply. Your message was saved. Test qwen2.5:7b directly in Ollama, then send a message again."
+                : modelCatalog[config.model].provider === "ollama"
+                ? `Ollama could not return a usable reply. Your message was saved. Test ${config.model} directly in Ollama, then send a message again.`
                 : "OpenAI could not return a reply. Check the server’s OpenAI API key and provider availability, or save a draft using local Ollama."}
             </p>
           )}
-          {data.selected?.needs_human ? (
-            <p>Awaiting staff follow-up</p>
+          {query.staffNotice && <p role="alert">{query.staffNotice === "empty" ? "Enter a reply of up to 3,000 characters." : "The assignment changed. Check the queue before replying."}</p>}
+          {data.selected?.closed_at ? <p>Resolved by staff</p> : data.selected?.needs_human ? (
+            <>
+              <p>Awaiting staff follow-up</p>
+              {staffAction ? <>
+                <form action={staffAction}>
+                  <label>Staff reply<textarea name="body" required maxLength={3000} /></label>
+                  <button name="action" value="reply">Save in-app reply</button>
+                </form>
+                <form action={staffAction}>
+                  <button name="action" value="resolve">Resolve and close conversation</button>
+                </form>
+              </> : <Link href={`/workspaces/${businessId}/inbox`}>Manage assignment</Link>}
+            </>
           ) : (
             <form action={formAction}>
               {fields}
@@ -188,7 +205,7 @@ async function Studio({ params, searchParams }: Props) {
               <li key={String(t.id)}>
                 <Link href={base + "?agent=" + agent + "&thread=" + t.id}>
                   {String(t.name)} · {t.test_mode ? "Test" : "Published"} ·{" "}
-                  {t.needs_human ? "Needs staff" : "Open"}
+                  {t.closed_at ? "Resolved" : t.needs_human ? "Needs staff" : "Open"}
                 </Link>
               </li>
             ))}

@@ -6,7 +6,7 @@ import { identityIssuer } from "@/db/workspace";
 import { withTenant, TenantAccessDenied } from "@/db";
 import { permissions } from "@/db/permissions";
 
-type Context = Parameters<Parameters<typeof withTenant>[2]>[0];
+type Context = Parameters<Parameters<typeof withTenant>[2]>[0] & { staffName: string };
 export async function withWorkspaceRoles<T>(
   businessId: string,
   roles: string[],
@@ -29,7 +29,7 @@ export async function withWorkspaceRoles<T>(
         sql`,`,
       )})`);
       if (!owner) throw new TenantAccessDenied();
-      return operation(ctx);
+      return operation({ ...ctx, staffName: session.user.name });
     },
   );
 }
