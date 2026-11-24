@@ -9,18 +9,19 @@ import { saveFact } from "./actions";
 import { latestFacts } from "./library";
 
 const notices = new Map([
-  ["saved", "Fact saved."],
-  ["retired", "Fact retired."],
-  ["restored", "Fact restored as a new revision."],
-  ["changed", "This fact changed. Review the latest revision before editing."],
-  ["invalid", "Enter a name and information for the fact."],
+  ["saved", "Changes saved."],
+  ["faqSaved", "FAQ added."],
+  ["retired", "Source retired."],
+  ["restored", "Source restored as a new revision."],
+  ["changed", "This source changed. Review the latest revision before editing."],
+  ["invalid", "Complete both fields before saving."],
 ]);
 
 type Props = PageProps<"/workspaces/[businessId]/knowledge">;
-function Fields({ title = "", body = "" }) {
+function Fields({ title = "", body = "", faq = false }) {
   return <>
-    <label>Fact name<input name="title" required maxLength={2000} defaultValue={title} /></label>
-    <label>Business information<textarea name="body" required rows={3} maxLength={6000} defaultValue={body} /></label>
+    <label>{faq ? "Customer question" : "Fact name"}<input name="title" required maxLength={2000} defaultValue={title} /></label>
+    <label>{faq ? "Approved answer" : "Business information"}<textarea name="body" required rows={3} maxLength={6000} defaultValue={body} /></label>
   </>;
 }
 async function Library({ params, searchParams }: Props) {
@@ -42,29 +43,34 @@ async function Library({ params, searchParams }: Props) {
   return <main className="assistant-studio">
     <Link href={`/dashboard?businessId=${businessId}`}>Workspace overview</Link>
     <h1>Shared knowledge</h1>
-    <p>Save business facts here, then choose which assistants can use them.</p>
+    <p>Write business facts and answers to common questions, then assign them to your assistants.</p>
     <Link href={`/workspaces/${businessId}/assistant`}>AI assistants</Link>
     {message && <p role="status">{message}</p>}
     <section><h2>Add a fact</h2><form action={saveFact.bind(null, businessId, randomUUID(), 0)}>
       <Fields /><button>Add fact</button></form></section>
+    <details><summary>Add an FAQ</summary>
+      <form action={saveFact.bind(null, businessId, randomUUID(), 0)}>
+        <Fields faq /><button name="action" value="createFaq">Save FAQ</button>
+      </form>
+    </details>
     {facts.map(fact => {
       const retired = fact.revision <= fact.cutoff;
       const activeReleases = releases.filter(release => release.key === fact.key);
       return <section key={fact.id} aria-label={fact.title}>
-        <h2>{fact.title}</h2><p>Revision {fact.revision}{retired ? " · Retired" : ""}</p><p style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{fact.body}</p>
+        <h2>{fact.title}</h2>{fact.is_faq && <p>FAQ</p>}<p>Revision {fact.revision}{retired ? " · Retired" : ""}</p><p style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{fact.body}</p>
         {activeReleases.length > 0 && <>
-          <h3>Enabled assistants using this fact</h3>
+          <h3>Enabled assistants using this source</h3>
           <ul>{activeReleases.map(release => <li key={release.id}>
             <Link href={`/workspaces/${businessId}/assistant?agent=${release.id}&version=${release.version}`}>
-              {release.name} · published v{release.version} · fact revision {release.revision}
+              {release.name} · published v{release.version} · revision {release.revision}
             </Link>
           </li>)}</ul>
         </>}
-        <details><summary>{retired ? "Review and restore" : "Edit fact"}</summary><form action={saveFact.bind(null, businessId, fact.key, fact.revision)}>
-          <Fields title={fact.title} body={fact.body} /><button name="action" value={retired ? "restore" : "save"}>{retired ? "Restore as new revision" : "Save revision"}</button>
+        <details><summary>{retired ? "Review and restore" : fact.is_faq ? "Edit FAQ" : "Edit fact"}</summary><form action={saveFact.bind(null, businessId, fact.key, fact.revision)}>
+          <Fields faq={fact.is_faq} title={fact.title} body={fact.body} /><button name="action" value={retired ? "restore" : "save"}>{retired ? "Restore as new revision" : "Save revision"}</button>
         </form></details>
-        {!retired && <details><summary>Retire fact</summary>
-          <p>Published assistants keep answering with their saved information. To stop those answers immediately, disable each affected assistant. To publish again, remove or replace this fact and test the draft.</p>
+        {!retired && <details><summary>{fact.is_faq ? "Retire FAQ" : "Retire fact"}</summary>
+          <p>Published assistants keep answering with their saved information. To stop those answers immediately, disable each affected assistant. To publish again, remove or replace this source and test the draft.</p>
           <form action={saveFact.bind(null, businessId, fact.key, fact.revision)}><button name="action" value="retire">Confirm retirement</button></form>
         </details>}
       </section>;

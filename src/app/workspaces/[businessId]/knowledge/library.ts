@@ -5,9 +5,9 @@ import { asAssistantManager } from "../assistant/store";
 type Transaction = Parameters<Parameters<typeof asAssistantManager>[1]>[0]["tx"];
 
 export function latestFacts(tx: Transaction, business: string) {
-  return tx.execute<{ id: string; key: string; revision: number; title: string; body: string; cutoff: number }>(sql`
+  return tx.execute<{ id: string; key: string; revision: number; title: string; body: string; is_faq: boolean; cutoff: number }>(sql`
     select latest.*,root.retired_through as cutoff from (
-      select distinct on (library_key) id, library_key as key, revision, title, body
+      select distinct on (library_key) id, library_key as key, revision, title, body, source_ref='workspace-faq' as is_faq
       from knowledge_documents where business_id=${business} and library_key is not null and status='ready'
       order by library_key, revision desc
     ) latest join knowledge_documents root on root.business_id=${business}

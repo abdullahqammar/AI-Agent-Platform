@@ -20,7 +20,7 @@ const subscribeToHydration = () => () => {};
 const clientReady = () => true;
 const serverReady = () => false;
 
-type Fact = { id: string; key: string; revision: number; title: string; body: string; cutoff: number };
+type Fact = { id: string; key: string; revision: number; title: string; body: string; is_faq: boolean; cutoff: number };
 function snapshot(fact: Fact) {
   return { title: fact.title, text: fact.body, shared: { id: fact.id, key: fact.key, revision: fact.revision } };
 }
@@ -77,15 +77,15 @@ export function Editor({ initial, facts, libraryPath }: { initial: AssistantConf
         Allow the assistant to request staff handoff
       </label>
       <h2>Business knowledge</h2>
-      <label>Add a workspace fact
-        <select aria-label="Add a workspace fact" value="" disabled={config.knowledge.length >= 12}
+      <label>Add workspace knowledge
+        <select aria-label="Add workspace knowledge" value="" disabled={config.knowledge.length >= 12}
           onChange={event => {
             const fact = facts.find(item => item.id === event.target.value);
             if (fact) set({ ...config, knowledge: [...config.knowledge, snapshot(fact)] });
           }}>
-          <option value="">Choose a shared fact</option>
+          <option value="">Choose a fact or FAQ</option>
           {facts.filter(fact => fact.revision > fact.cutoff && !config.knowledge.some(source => source.shared?.key === fact.key)).map(fact =>
-            <option key={fact.id} value={fact.id}>{fact.title} · revision {fact.revision}</option>)}
+            <option key={fact.id} value={fact.id}>{fact.is_faq ? "FAQ · " : ""}{fact.title} · revision {fact.revision}</option>)}
         </select>
       </label>
       <a href={libraryPath}>Manage shared knowledge</a>
@@ -94,7 +94,7 @@ export function Editor({ initial, facts, libraryPath }: { initial: AssistantConf
         return (
           <fieldset key={index}>
             <legend>Assigned source {index + 1}</legend>
-            {source.shared && <p>Shared fact · revision {source.shared.revision}</p>}
+            {source.shared && <p>{latest?.is_faq ? "Shared FAQ" : "Shared fact"} · revision {source.shared.revision}</p>}
             {latest && source.shared && source.shared.revision <= latest.cutoff && <p>This revision was retired. Remove or replace it before saving or publishing.</p>}
             {latest && latest.revision > latest.cutoff && latest.id !== source.shared?.id && <button type="button" onClick={() => set({
               ...config, knowledge: config.knowledge.map((item, i) => i === index ? snapshot(latest) : item),

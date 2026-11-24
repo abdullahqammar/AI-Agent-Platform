@@ -22,7 +22,8 @@ globalThis.fetch = async function simulatedProvider(resource, init) {
   const handoff = context.customerMessage.includes("appointment");
   const answer = handoff
     ? "A staff member must review your request."
-    : context.assignedKnowledge.find((s) => s.title === "Hours").text;
+    : (context.assignedKnowledge.find((s) => s.title === context.customerMessage) ??
+        context.assignedKnowledge.find((s) => s.title === "Hours")).text;
   return Response.json({
     choices: [{ message: { content: JSON.stringify({ answer, handoff }) } }],
     usage: { prompt_tokens: 20, completion_tokens: 10 },

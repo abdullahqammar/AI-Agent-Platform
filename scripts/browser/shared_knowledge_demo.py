@@ -16,10 +16,10 @@ def register(page):
     page.wait_for_url("**/onboarding")
 
 
-def test_answer(page, answer, published=False):
+def test_answer(page, answer, published=False, question="What are your hours?"):
     page.get_by_label("Customer name").fill("Knowledge tester")
     page.get_by_role("button", name="Start published conversation" if published else "Start version test").click()
-    page.get_by_label("Message", exact=True).fill("What are your hours?")
+    page.get_by_label("Message", exact=True).fill(question)
     page.get_by_role("button", name="Send", exact=True).click()
     expect(page.locator(".assistant-message")).to_contain_text(answer)
 
@@ -39,7 +39,7 @@ with sync_playwright() as pw:
         owner.get_by_label("Fact name").fill("Hours")
         owner.get_by_label("Business information").fill("Open on Mondays.")
         owner.get_by_role("button", name="Add fact").click()
-        expect(owner.get_by_role("status")).to_have_text("Fact saved.")
+        expect(owner.get_by_role("status")).to_have_text("Changes saved.")
         assert owner.evaluate("document.documentElement.scrollWidth <= innerWidth")
         studio = library.rsplit("/", 1)[0] + "/assistant"
         agents = []
@@ -47,7 +47,7 @@ with sync_playwright() as pw:
             owner.goto(studio)
             owner.get_by_label("Assistant name").fill(name)
             expect(owner.get_by_label("Assistant name")).to_have_value(name)
-            owner.get_by_label("Add a workspace fact").select_option(label="Hours · revision 1")
+            owner.get_by_label("Add workspace knowledge").select_option(label="Hours · revision 1")
             owner.get_by_role("button", name="Remove source").first.click()
             owner.get_by_role("button", name="Save new draft version").click()
             owner.wait_for_url("**/assistant?agent=*")
@@ -67,7 +67,7 @@ with sync_playwright() as pw:
         region.get_by_role("button", name="Save revision").click()
         expect(region.get_by_text("Revision 2")).to_be_visible()
         stale.get_by_role("button", name="Save revision").click()
-        expect(stale.get_by_role("status")).to_contain_text("This fact changed")
+        expect(stale.get_by_role("status")).to_contain_text("This source changed")
         stale.close()
 
         owner.goto(agents[0])
@@ -87,7 +87,7 @@ with sync_playwright() as pw:
         stale_publish.goto(agents[1])
         expect(stale_publish.get_by_role("button", name="Publish and enable")).to_be_enabled()
         owner.goto(library)
-        expect(region.get_by_role("link", name="Reception · published v1 · fact revision 1")).to_be_visible()
+        expect(region.get_by_role("link", name="Reception · published v1 · revision 1")).to_be_visible()
         region.get_by_text("Retire fact", exact=True).click()
         region.get_by_role("button", name="Confirm retirement").click()
         expect(region.get_by_text("Revision 3 · Retired")).to_be_visible()
@@ -97,7 +97,7 @@ with sync_playwright() as pw:
         expect(stale_publish.get_by_text("The draft or its shared knowledge changed.", exact=False)).to_be_visible()
         expect(stale_publish.get_by_role("button", name="Publish and enable")).to_be_disabled()
         owner.goto(studio)
-        expect(owner.get_by_label("Add a workspace fact").locator("option")).to_have_count(1)
+        expect(owner.get_by_label("Add workspace knowledge").locator("option")).to_have_count(1)
         owner.goto(agents[0])
         test_answer(owner, "Open on Mondays.", published=True)
         owner.goto(library)
@@ -112,6 +112,32 @@ with sync_playwright() as pw:
         owner.get_by_role("button", name="Save new draft version").click()
         expect(owner.get_by_text("Version 3 · OpenAI", exact=False)).to_be_visible()
         test_answer(owner, "Open on Thursdays.")
+        # Add a reusable FAQ to both assistants. Existing releases keep their sources.
+        question = "Where can I collect an order?"
+        answer = "Collect your order at the front desk."
+        owner.goto(library)
+        owner.get_by_text("Add an FAQ", exact=True).click()
+        owner.get_by_label("Customer question").fill(question)
+        owner.get_by_label("Approved answer").fill(answer)
+        owner.get_by_role("button", name="Save FAQ").click()
+        expect(owner.get_by_role("status")).to_have_text("FAQ added.")
+        faq = owner.get_by_role("region", name=question)
+        for agent_url, next_version in [(agents[1], 4), (agents[0], 2)]:
+            owner.goto(agent_url)
+            owner.get_by_text("Edit configuration and knowledge").click()
+            if next_version == 2:
+                owner.get_by_role("button", name="Use revision 4 of Hours").click()
+            owner.get_by_label("Add workspace knowledge").select_option(label=f"FAQ · {question} · revision 1")
+            owner.get_by_role("button", name="Save new draft version").click()
+            expect(owner.get_by_text(f"Version {next_version} · OpenAI", exact=False)).to_be_visible()
+            test_answer(owner, answer, question=question)
+        owner.goto(library)
+        faq.get_by_text("Edit FAQ", exact=True).click()
+        faq.get_by_label("Approved answer").fill("Collect your order at reception.")
+        faq.get_by_role("button", name="Save revision").click()
+        expect(faq.get_by_text("Revision 2", exact=True)).to_be_visible()
+        owner.goto(agents[1])
+        test_answer(owner, answer, question=question)
         stale_draft.close()
         stale_publish.close()
         outsider = browser.new_page()
