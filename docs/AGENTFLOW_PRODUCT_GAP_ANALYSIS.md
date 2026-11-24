@@ -33,3 +33,20 @@ A platform-managed connection belongs to the platform; a BYOK connection belongs
 For each turn resolve workspace, feature release, entitlement, selected version, model eligibility, permitted connection and budget before the provider call. On success persist model, connection attribution, units and request identity. On a timeout keep the delivery outcome uncertain until reconciled. Retries must not double charge. Never silently switch from BYOK to platform-funded inference. Verify OpenAI first; add Anthropic or Gemini through explicit adapters and contract tests when provider access is authorized. Set prices, overage policy, billing provider and actual external charges only with owner approval.
 
 Stages 2 and 3 remain approved development scope. Sequence implementation after authority, entitlements, usage integrity and event processing; require explicit release before customer activation.
+
+## Whole-business integration audit
+
+Baseline for this addition: agentflow/multi-workspace at 058e6b6, plus the Business Connect assignment view. Classification as of 24 November 2026. “Newly approved” identifies requirements missing from the previous roadmap, now recorded in the blueprint. It does not indicate a live capability.
+
+| Requirement | Classification | Repository evidence and remaining work |
+|---|---|---|
+| Workspace identities, team roles and tenant isolation | Implemented for current surfaces | Better Auth, withTenant, FORCE RLS and composite keys. Add per-operation and record authorization for connected systems. |
+| Shared knowledge, testing, versions, publishing, handoff | Implemented for manual text and FAQs | Studio and Business Connect use one library. Customer-facing external channel acceptance remains open. |
+| Reusable providers, tools, usage, audit | Partial | OpenAI/Ollama adapters, tool definitions and agent tool tables, in-app handoff, message usage and audit events. No general tool dispatcher, encrypted BYOK manager, usage ledger or central entitlement evaluator. |
+| Reviewed website intake and freshness | Newly approved details; partial roadmap coverage | No crawler, sitemap selector, provenance/expiry policy or sync history. Start with review and bounded public reads. |
+| Structured imports and live business data | Newly approved | Existing customer, location and appointment tables serve AgentFlow workflows. No generic catalogue, source mapping, live stock/order adapter or sync cursor. |
+| Vendor connections and custom APIs | Partial roadmap, missing implementation | Existing channel connections are messaging identities. Add business connections, typed adapters, OAuth/webhook verification and least-privilege grants. |
+| Customer workforce and private Copilot | Customer studio partial; private Copilot newly approved | Server verifies manager identity and in-app thread/version. No external verified customer entry, internal audience column or private staff session engine. |
+| Revocation, source provenance and approval | Partial | Manual source revisions are preserved in published configurations. Add connection and assignment revocation for every runtime path, including history, sensitive tools and background jobs. |
+| Subscriptions, source budgets, orchestration | Approved roadmap; missing enforcement | Build centralized deny-by-default gates, per-business usage and worker limits before releasing advanced operations. |
+| Vendor credentials, production accounts, paid AWS, commercial decisions | Requires additional owner approval | Choose pilot data and external accounts when a connector is ready. Agree paid infrastructure, production access, sensitive-action policies and commercial activation separately. |

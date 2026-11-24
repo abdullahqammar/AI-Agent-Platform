@@ -29,3 +29,18 @@
 **Search, notifications and reporting:** use role-scoped filters on the inbox and workforce when users have enough items to search. Prefer a real pending handoff over a generic notification feed. Give analytics a date range, denominator, drill-down and explicit missing-data states. Begin with testable outcomes such as staff handoffs resolved, separate from volume and model usage.
 
 **Evaluation:** observe a first-time owner creating an assistant, getting a grounded answer, correcting a source, testing escalation, publishing and finding it again. Record where they hesitate, what they expect “published” to mean, and whether they can distinguish a local provider outage from missing knowledge. Desktop/mobile automation verifies interaction and isolation. It does not establish usability for real owners.
+
+## Business Connect and private Copilot
+
+The workspace dashboard now opens **Business Connect** at the existing knowledge-library URL. It shows manual facts and FAQs, their revisions and which versions assistants use. Editing stays in one place. For an older enabled release and a newer draft, show both references. An unassigned source has an explicit empty state.
+
+| Owner task | Destination and interaction |
+|---|---|
+| Start a business | Overview offers optional guided connection setup after workspace creation. A future website flow discovers a sitemap, previews allowed pages and exclusions, then asks for review before assignment. |
+| Connect and govern data | Business Connect groups website, data import, vendor connection and custom API when functional. Show account, granted reads/writes, last successful sync, freshness, failed records, retry and dependent employees. Knowledge is a section of this destination. |
+| Set up an employee | AI Workforce shows audience, version, assigned sources, tools and channels. Preview a record-level example before granting access. Test with safe inputs and publish to a verified channel explicitly. |
+| Ask an internal question | Business Copilot opens a private staff session with visible workspace, permitted data and observation times. Show source evidence and require a separate approval step for sensitive changes. |
+| Handle a customer | Conversations retains the channel, verified customer, transcript, reason for handoff, current assignee and delivery state. Keep staff-only notes and internal reports out of customer replies. |
+| Manage the business | Team and Permissions owns human roles. Settings owns workspace preferences. Analytics and Usage distinguishes provider costs, subscription charges and business outcomes. Platform administration is separate. |
+
+Only working destinations enter navigation. Mobile acceptance includes switching workspace during a draft, reading source dates, reviewing a proposed action and distinguishing a private Copilot session from a customer conversation.

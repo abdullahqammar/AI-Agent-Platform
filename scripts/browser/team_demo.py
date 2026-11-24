@@ -97,7 +97,7 @@ with sync_playwright() as pw:
         member.goto('http://localhost:3000/dashboard?businessId=' + studio.split('/')[-2])
         expect(member.get_by_text('Viewer', exact=True).first).to_be_visible()
         expect(member.get_by_role('region', name='Your AI workforce')).to_have_count(0)
-        expect(member.get_by_role('link', name='Shared knowledge')).to_have_count(0)
+        expect(member.get_by_role('link', name='Business Connect')).to_have_count(0)
         diagnostic = studio.replace('/workspaces/', '/api/workspaces/').rsplit('/', 1)[0] + '/local-model?model=qwen3.5:4b'
         assert member.request.get(diagnostic).status == 404
         member.goto(studio.rsplit('/', 1)[0] + '/knowledge')

@@ -901,3 +901,12 @@ Use accurate status labels:
 Never confuse these statuses.
 
 **The ultimate objective is to build the complete agreed AgentFlow platform, maintain its full product vision permanently in the repository, learn from OnPlas without modifying it, and ensure that every future Codex session can continue from the actual project state without losing context.**
+## 16. Business Connect and the two AI experiences
+
+A business connects an authorized source once. The workspace owner assigns selected records and operations to named employees. Business Connect covers four families: reviewed website content, structured business data, supported vendor integrations and custom authorized APIs. The business owns the connection; creating an assistant grants no implicit source access.
+
+Customer AI serves an identified channel and its published employee version. Business Copilot serves a signed-in employee in the private dashboard. Both reuse workspace connections, models, knowledge, execution services and metering. Customer AI can search approved products or help a verified customer with their own order. Copilot can summarize authorized orders and inventory or draft a reply. Each internal role sees only the records and operations it could use directly. Platform administration has a separate authority boundary.
+
+Support guided website discovery, selected pages and exclusions, reviewed imports, mapping, sync schedules and health. Catalogue, product specifications, price, stock, services, customers, orders, suppliers, bookings, locations and policies have distinct record types and freshness needs. Prefer a verified live read for volatile values. A business owner should be able to trace a claim to its source and understand when a value could last be verified.
+
+Release progressively under the existing three-stage strategy. Scope grants, provenance, access checks and revocation are prerequisites. Source count, crawl volume, storage, sync cadence, API use and advanced actions are candidate workspace entitlements. Prices, external procurement and payment activation remain owner decisions. See the request flow and release tests in AGENTFLOW_ARCHITECTURE_AND_SECURITY.md and the sequence in AGENTFLOW_MASTER_ROADMAP.md.

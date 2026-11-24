@@ -969,3 +969,7 @@ Build the agreed product fully. Do not omit agreed functionality, invent
 unrelated scope, introduce customer white-label branding, rewrite
 working foundations unnecessarily or waste implementation time on
 repeated planning and unnecessary approval cycles.
+
+## Business Connect and Business Copilot
+
+The master blueprint now includes a shared business connection layer for customer-facing AI employees and the authenticated internal Business Copilot. Both use the workspace's shared AI foundation. Authority comes from the request's verified origin, current actor, connection grant, AI assignment and record-level permission. Keep private copilot conversations outside customer transcripts and staff handoff exports. For source access, freshness and revocation rules, follow AGENTFLOW_ARCHITECTURE_AND_SECURITY.md. Relevance AI remains the primary SaaS experience benchmark. Use AWS and Amazon Connect as architectural and service-operations references.
