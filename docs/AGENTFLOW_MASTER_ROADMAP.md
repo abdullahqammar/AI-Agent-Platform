@@ -22,7 +22,7 @@ In-app handoff triage now supports workspace-wide discovery, claiming and releas
 | --- | --- | --- |
 | Core workspaces and teams | Implemented and locally exercised | Maintain isolation and revocation checks as new surfaces are added. |
 | First AI employee | In-app drafts, publishing, shared FAQs, test history, staff handoff and a local model installation check are implemented | On the AgentFlow host with Ollama, get an answer from assigned knowledge, reload the conversation, then trigger and verify a handoff. |
-| Platform administration | Independent core milestone, required before central releases | Establish platform-admin authority separate from workspace ownership. Verify denied direct reads and writes before releasing Site Identity editing. |
+| Platform administration | Platform authority and Site Identity text settings implemented | Verify secure image uploads, replacement, fallback and independent sharing settings. |
 | Stage 1 channels and business workflows | In-app channel available. External channel acceptance open | Verify WhatsApp webhook signatures, duplicate delivery handling and staff takeover using an authorized test number. |
 | Stage 2 commercial controls | Planned, unreleased | Enforce platform availability, plan entitlements and workspace preferences server-side. Verify workspace billing events and usage attribution before commercial activation. |
 | Stage 3 workforce operations | Planned, unreleased | Verify bounded multi-agent handoffs, retries, budgets, additional channels and reporting under the same permissions and feature controls. |
@@ -44,3 +44,5 @@ The playground now records the knowledge supplied to successful test replies. Ow
 5. **Stage 3, disabled pending release.** Broader ERP, custom integrations, bounded delegation, replayable multi-step jobs, additional channels and advanced analytics. Use operational measurements to justify cloud infrastructure changes.
 
 Connector priority weighs repeated customer demand, a clear system of record, least-privilege scopes, test accounts and maintenance burden. After catalogue/import and website pilots, compare Shopify and WooCommerce for inventory, calendar systems for booking availability, HubSpot and Salesforce for CRM, and Drive, Sheets, Microsoft 365 or WordPress for selected content. ERP/suppliers and payment/order mutations need stronger approval and reconciliation. Each new vendor needs a named pilot and verified scopes before production enablement.
+
+Platform administrator authorization and versioned Site Identity text settings now underpin the administration area. Next extend the same settings and audit history with validated primary/alternate logos, favicon, app icon, and sharing image. Keep public reads limited to explicitly published identity data. Independently editable social metadata and asset replacement need acceptance alongside the existing text workflow before marking Site Identity complete.

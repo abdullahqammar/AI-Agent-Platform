@@ -4,6 +4,8 @@ import {
   text, timestamp, unique, uniqueIndex, uuid,
 } from "drizzle-orm/pg-core";
 
+import { user as authUser } from "./auth-schema.ts";
+
 const id = () => uuid("id").defaultRandom().primaryKey();
 const instant = (name: string) => timestamp(name, { withTimezone: true });
 const createdAt = () => instant("created_at").notNull().defaultNow();
@@ -440,3 +442,19 @@ export const catalogueRefreshes = pgTable("catalogue_refreshes", {
   foreignKey({ name: "catalogue_refresh_source_fk", columns: [t.businessId, t.documentId], foreignColumns: [knowledgeDocuments.businessId, knowledgeDocuments.id] }),
   foreignKey({ name: "catalogue_refresh_actor_fk", columns: [t.businessId, t.membershipId], foreignColumns: [memberships.businessId, memberships.id] }),
 ]).enableRLS();
+
+// Platform authority is independent of business membership.
+export const platformAdmins = pgTable("platform_admins", {
+  userId: text("user_id").primaryKey().references(() => authUser.id, { onDelete: "cascade" }),
+  grantedAt: instant("granted_at").notNull().defaultNow(),
+});
+
+export const siteIdentityVersions = pgTable("site_identity_versions", {
+  version: integer("version").primaryKey(),
+  actorId: text("actor_id").notNull(),
+  createdAt: createdAt(),
+  name: text("name").notNull(),
+  tagline: text("tagline").notNull(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+});

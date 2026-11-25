@@ -12,7 +12,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const registering = mode === "register";
   return <>
     <h1>{registering ? "Create your account" : "Welcome back"}</h1>
-    <p className="intro">{registering ? "Start with your account. Set up your business next." : "Sign in to your AgentFlow workspace."}</p>
+    <p className="intro">{registering ? "Start with your account. Set up your business next." : "Sign in to your business workspace."}</p>
     <form onSubmit={async (event) => {
       event.preventDefault();
       if (busy) return;
@@ -42,6 +42,6 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
       {success && <p role="status">Signed in. Opening your workspace…</p>}
       <button className="primary" disabled={busy}>{busy ? "Please wait…" : registering ? "Create account" : "Sign in"}</button>
     </form>
-    <p className="form-switch">{registering ? "Already have an account? " : "New to AgentFlow? "}<Link href={registering ? "/login" : "/register"}>{registering ? "Sign in" : "Create an account"}</Link></p>
+    <p className="form-switch">{registering ? "Already have an account? " : "Need an account? "}<Link href={registering ? "/login" : "/register"}>{registering ? "Sign in" : "Create an account"}</Link></p>
   </>;
 }

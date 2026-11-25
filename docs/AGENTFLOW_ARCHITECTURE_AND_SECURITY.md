@@ -92,3 +92,17 @@ For each message, the server locks the assistant, checks its active grants and s
 Each grant change increments the assistant's access generation in the same transaction as the grant and audit change. Messages are stamped at write time. Subsequent model calls include only prior messages from the current generation; the owner can still inspect the stored transcript. This conservatively starts model context afresh across all threads for the affected assistant. Disconnect invalidates every affected assistant atomically. Source revision checks reject stale management forms. The current agent lock serializes provider turns and grant changes, so a revoke may wait for an already running turn. Future async workers must recheck authorization before releasing a result. Content already delivered to a person cannot be recalled.
 
 Catalogue refresh uses the source revision as an optimistic concurrency check. The workspace Owner reviews a complete replacement keyed by case-insensitive SKU. Reordering identical products produces no change. One transaction locks the source, saves its prior structured items and import timestamp in catalogue_refreshes, updates the source, records the author and change counts, and advances the access generation for every assigned assistant. Grants remain attached to the same source ID. Workers and model requests only read the current snapshot. Historical snapshots are available through an Owner-only review route scoped to both workspace and source. The table has forced row-level security and composite foreign keys to the source and actor membership.
+
+### Platform administration and Site Identity
+
+Platform administrators have a separate grant tied to the immutable Better Auth user ID. Creating or owning a business grants no platform privileges. The settings page and save operation each verify the current session and look up the grant on the server. The save transaction holds the grant until the edit finishes, serializes version creation, and records the actor, timestamp and complete text settings. An older open form cannot replace a more recent change. Public pages read only the current branding fields.
+
+For a deliberate local operator grant, verify ownership of the intended registered account and its exact authentication ID first. In pgAdmin on the intended development database, run the following with that ID substituted. No default administrator is seeded.
+
+```sql
+INSERT INTO platform_admins (user_id)
+SELECT id FROM "user" WHERE id = '<verified authentication ID>'
+ON CONFLICT DO NOTHING;
+```
+
+To revoke that same grant, execute `DELETE FROM platform_admins WHERE user_id = '<verified authentication ID>';`. Access is checked again on the next save, including submissions from previously opened forms. The restricted local application role owns its development tables. These application checks assume trusted server code and controlled database operator access.

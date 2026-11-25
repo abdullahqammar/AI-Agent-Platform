@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { publicIdentity } from "@/lib/platform-identity";
 import localFont from "next/font/local";
 import "./globals.css";
 
@@ -14,10 +15,10 @@ const geistMono = localFont({
   weight: "100 900",
 });
 
-export const metadata: Metadata = {
-  title: "AgentFlow",
-  description: "Your business assistant workspace.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const {name,title,description} = await publicIdentity();
+  return { title, description, applicationName: name, openGraph: {siteName:name,title,description}, twitter: {title,description} };
+}
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
