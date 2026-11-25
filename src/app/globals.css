@@ -135,3 +135,6 @@ nav a,nav > span { display: flex; align-items: center; gap: 11px; padding: 10px 
 .assistant-workbench .test-knowledge summary { font-size: .9rem; }
 .test-knowledge dt { font-weight: 650; margin-top: .65rem; }
 .test-knowledge dd { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.catalogue-preview { overflow-wrap: anywhere; }
+.catalogue-preview ul, ul.catalogue-preview { max-height: 20rem; overflow: auto; }
+.catalogue-preview li { padding-block: .5rem; border-bottom: 1px solid #d6dee9; }

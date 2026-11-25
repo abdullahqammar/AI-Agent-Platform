@@ -128,6 +128,15 @@ test("AgentFlow schema and tenant boundaries", async (t) => {
       }), postgresError("23503", "agent_knowledge_document_tenant_fk"));
     });
 
+    await t.test("catalogue history cannot attach another workspace's snapshot source", async () => {
+      await assert.rejects(withTenant(request, permission, async ({ tx, membershipId }) => {
+        await tx.insert(schema.catalogueRefreshes).values({
+          businessId: a, documentId: otherCatalogue, membershipId, sourceRevision: 1,
+          previousItems: [], previousImport: new Date(), added: 0, changed: 1, removed: 0,
+        });
+      }), postgresError("23503", "catalogue_refresh_source_fk"));
+    });
+
     await t.test("timezone validation rejects abbreviations", async () => {
       await assert.rejects(withTenant(request, permission, async ({ tx }) => {
         await tx.insert(schema.locations).values({ businessId: a, name: "Test location", timezone: "PST" });

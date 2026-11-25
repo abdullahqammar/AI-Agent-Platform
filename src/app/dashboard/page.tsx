@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { z } from "zod";
 import { Suspense } from "react";
 import { notFound, redirect } from "next/navigation";
@@ -21,12 +22,12 @@ async function Dashboard({ searchParams }: DashboardProps) {
   try { workspace = await readWorkspace(session.user.id, target, true); }
   catch (error) {
     if (!(error instanceof TenantAccessDenied)) throw error;
-    return <main className="access-message"><Brand /><h1>Workspace access unavailable</h1><p>Your membership or permissions may have changed. Contact your business owner.</p><a href="/workspaces">Your workspaces</a><Logout /></main>;
+    return <main className="access-message"><Brand /><h1>Workspace access unavailable</h1><p>Your membership or permissions may have changed. Contact your business owner.</p><Link href="/workspaces">Your workspaces</Link><Logout /></main>;
   }
   const { business, role, locations, workforce } = workspace;
   const studio = `/workspaces/${business.id}/assistant`;
   return <main className="workspace">
-    <aside className="sidebar"><Brand /><a className="workspace-switch" aria-label="Switch workspace" href="/workspaces"><Building2 size={20} /><div><strong>{business.name}</strong><span>{role}</span></div></a>
+    <aside className="sidebar"><Brand /><Link className="workspace-switch" aria-label="Switch workspace" href="/workspaces"><Building2 size={20} /><div><strong>{business.name}</strong><span>{role}</span></div></Link>
       <nav aria-label="Workspace"><a className="nav-active" href={`/dashboard?businessId=${business.id}`} aria-current="page"><LayoutDashboard size={18} />Overview</a><a href={`/workspaces/${business.id}/team`}><Users size={18} />Team</a>{workforce && <><a href={`/workspaces/${business.id}/assistant`}><Bot size={18} />AI assistants</a><a href={`/workspaces/${business.id}/knowledge`}>Business Connect</a><a href={`/workspaces/${business.id}/inbox`}><MessageSquare size={18} />Staff handoffs</a></>}</nav>
       <div className="sidebar-account"><strong>{session.user.name}</strong><span>{session.user.email}</span><Logout /></div>
     </aside>

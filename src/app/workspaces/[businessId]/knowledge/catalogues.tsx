@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { ProductRows } from "./product-rows";
 import { randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { changeCatalogueAccess, importCatalogue } from "./catalogue-actions";
@@ -24,13 +26,12 @@ export function Catalogues({business,data}:{business:string;data:Awaited<ReturnT
     {data.owner && <details><summary>Import a catalogue</summary>
       <form action={importCatalogue.bind(null,business,randomUUID())}>
         <label>Catalogue name<input name="name" required maxLength={160}/></label>
-        <label>Product rows<textarea name="products" required maxLength={120000} rows={5} aria-describedby="product-format"/></label>
-        <p id="product-format">Paste up to 250 spreadsheet rows with three columns in order: SKU, product name and description. Omit the header. Each SKU must be unique.</p>
-        <button>Import products</button>
+        <ProductRows />
       </form></details>}
     {!data.sources.length && <p>No product catalogues imported.</p>}
     {data.sources.map(source => <article key={source.id} aria-label={source.title}>
       <h3>{source.title}</h3><p>{source.count} products · Imported {source.imported} UTC · {source.disconnected ? "Disconnected" : "Read-only snapshot"}</p>
+      {data.owner && <Link href={`/workspaces/${business}/knowledge/${source.id}`}>Review catalogue</Link>}
       {!source.disconnected && <>
         <p>Access applies immediately to draft tests and enabled assistants.</p>
         {data.agents.map(agent => {

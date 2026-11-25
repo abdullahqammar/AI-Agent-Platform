@@ -422,3 +422,21 @@ export const workspaceInvitations = pgTable("workspace_invitations", {
   check("invitation_role", sql`${t.role} in ('Viewer','Assistant manager')`),
   check("invitation_status", sql`${t.status} in ('pending','accepted','declined','revoked')`),
 ]).enableRLS();
+
+export const catalogueRefreshes = pgTable("catalogue_refreshes", {
+  id: id(),
+  businessId: businessId(),
+  documentId: uuid("document_id").notNull(),
+  membershipId: uuid("membership_id").notNull(),
+  sourceRevision: integer("source_revision").notNull(),
+  previousItems: jsonb("previous_items").notNull(),
+  previousImport: instant("previous_import").notNull(),
+  createdAt: createdAt(),
+  added: integer("added").notNull(),
+  changed: integer("changed").notNull(),
+  removed: integer("removed").notNull(),
+}, t => [
+  unique().on(t.businessId, t.documentId, t.sourceRevision),
+  foreignKey({ name: "catalogue_refresh_source_fk", columns: [t.businessId, t.documentId], foreignColumns: [knowledgeDocuments.businessId, knowledgeDocuments.id] }),
+  foreignKey({ name: "catalogue_refresh_actor_fk", columns: [t.businessId, t.membershipId], foreignColumns: [memberships.businessId, memberships.id] }),
+]).enableRLS();
