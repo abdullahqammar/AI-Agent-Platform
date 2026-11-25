@@ -22,7 +22,11 @@ globalThis.fetch = async function simulatedProvider(resource, init) {
   const payload = JSON.parse(init?.body ?? (await resource.clone().text()));
   const context = JSON.parse(payload.messages.at(-1).content);
   const handoff = context.customerMessage.includes("appointment");
-  const answer = handoff
+  const catalogueQuestion = context.customerMessage === "Describe the Oak Table";
+  const answer = catalogueQuestion
+    ? (context.catalogue.find(item => item.sku === "OAK-1")?.description ??
+       context.priorConversation.find(item => item.body.includes("Honey finish"))?.body ?? "No product details available.")
+    : handoff
     ? "A staff member must review your request."
     : (context.assignedKnowledge.find((s) => s.title === context.customerMessage) ??
         context.assignedKnowledge.find((s) => s.title === "Hours")).text;

@@ -141,6 +141,41 @@ with sync_playwright() as pw:
         expect(faq.get_by_text("Revision 2", exact=True)).to_be_visible()
         owner.goto(agents[1])
         test_answer(owner, answer, question=question)
+        owner.goto(library)
+        owner.get_by_text("Import a catalogue", exact=True).click()
+        owner.get_by_label("Catalogue name").fill("Workshop furniture")
+        owner.get_by_label("Product rows").fill("OAK-1\tOak Table\tHoney finish, seats six.")
+        owner.get_by_role("button", name="Import products").click()
+        catalogue = owner.get_by_role("article", name="Workshop furniture")
+        expect(catalogue).to_contain_text("Read-only snapshot")
+        for name in ["Reception", "Sales"]:
+            catalogue.get_by_role("button", name=f"Grant access for {name}").click()
+            expect(catalogue.get_by_role("button", name=f"Revoke access for {name}")).to_be_visible()
+
+        product_threads = []
+        for index, agent in enumerate(agents):
+            owner.goto(agent + "&version=1" if index == 0 else agent)
+            test_answer(owner, "Honey finish", published=index == 0, question="Describe the Oak Table")
+            product_threads.append(owner.url)
+
+        def repeat_question(index, expected):
+            owner.goto(product_threads[index])
+            owner.get_by_label("Message", exact=True).fill("Describe the Oak Table")
+            previous = owner.locator(".assistant-message").count()
+            owner.get_by_role("button", name="Send", exact=True).click()
+            expect(owner.locator(".assistant-message")).to_have_count(previous + 1)
+            expect(owner.locator(".assistant-message").last).to_contain_text(expected)
+
+        owner.goto(library)
+        catalogue.get_by_role("button", name="Revoke access for Reception").click()
+        expect(catalogue.get_by_role("button", name="Grant access for Reception")).to_be_visible()
+        repeat_question(0, "No product details available.")
+        repeat_question(1, "Honey finish")
+        owner.goto(library)
+        catalogue.get_by_text("Disconnect catalogue", exact=True).click()
+        catalogue.get_by_role("button", name="Confirm disconnect").click()
+        expect(catalogue).to_contain_text("Disconnected")
+        repeat_question(1, "No product details available.")
         stale_draft.close()
         stale_publish.close()
         outsider = browser.new_page()

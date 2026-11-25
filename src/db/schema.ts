@@ -93,6 +93,7 @@ export const locations = pgTable("business_locations", {
 ]).enableRLS();
 
 export const agents = pgTable("agents", {
+  accessGeneration: integer("access_generation").notNull().default(0),
   publishedVersion: integer("published_version"),
   testedVersion: integer("tested_version"),
   id: id(),
@@ -243,6 +244,7 @@ export const conversations = pgTable("conversations", {
 ]).enableRLS();
 
 export const messages = pgTable("messages", {
+  accessGeneration: integer("access_generation").notNull().default(0),
   knowledgeIndexes: integer("knowledge_indexes").array(),
   staffMembershipId: uuid("staff_membership_id"),
   usage: jsonb("usage"),
@@ -311,6 +313,8 @@ export const knowledgeDocuments = pgTable("knowledge_documents", {
   createdAt: createdAt(),
   title: text("title").notNull(),
   sourceRef: text("source_ref").notNull(),
+  catalogueItems: jsonb("catalogue_items").$type<{ sku: string; name: string; description: string }[]>(),
+  disconnectedAt: instant("disconnected_at"),
   libraryKey: uuid("library_key"),
   retiredThrough: integer("retired_through").notNull().default(0),
   revision: integer("revision"),

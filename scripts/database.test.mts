@@ -28,6 +28,8 @@ test("AgentFlow schema and tenant boundaries", async (t) => {
   const [a, b] = businesses;
   const [ownCustomer, otherCustomer] = customers;
   const request = { identity: { issuer, subject }, businessId: a };
+  const otherCatalogue = randomUUID();
+  const ownAgent = randomUUID();
   let seeded = false;
 
   try {
@@ -73,7 +75,11 @@ test("AgentFlow schema and tenant boundaries", async (t) => {
         await tx`INSERT INTO roles (id, business_id, name) VALUES (${roles[index]}, ${business}, 'Test role')`;
         await tx`INSERT INTO customers (id, business_id) VALUES (${customers[index]}, ${business})`;
       }
+      await tx`SELECT set_config('agentflow.business_id', ${b}, true)`;
+      await tx`INSERT INTO knowledge_documents(id,business_id,title,source_ref,catalogue_items)
+        VALUES(${otherCatalogue},${b},'Foreign catalogue','catalogue-import','[]'::jsonb)`;
       await tx`SELECT set_config('agentflow.business_id', ${a}, true)`;
+      await tx`INSERT INTO agents(id,business_id,name) VALUES (${ownAgent},${a},'Test assistant')`;
       await tx`INSERT INTO business_memberships (business_id, user_id, role_id) VALUES (${a}, ${user}, ${roles[0]})`;
       await tx`INSERT INTO role_permissions (business_id, role_id, permission_key) VALUES (${a}, ${roles[0]}, ${permission})`;
     });
@@ -113,6 +119,15 @@ test("AgentFlow schema and tenant boundaries", async (t) => {
       }), postgresError("23503", "business_memberships_role_tenant_fk"));
     });
 
+    await t.test("a workspace cannot discover or grant another workspace's catalogue", async () => {
+      await withTenant(request, permission, async ({ tx }) => {
+        assert.deepEqual(await tx.select().from(schema.knowledgeDocuments).where(eq(schema.knowledgeDocuments.id, otherCatalogue)), []);
+      });
+      await assert.rejects(withTenant(request, permission, async ({ tx }) => {
+        await tx.insert(schema.agentKnowledge).values({ businessId: a, agentId: ownAgent, documentId: otherCatalogue });
+      }), postgresError("23503", "agent_knowledge_document_tenant_fk"));
+    });
+
     await t.test("timezone validation rejects abbreviations", async () => {
       await assert.rejects(withTenant(request, permission, async ({ tx }) => {
         await tx.insert(schema.locations).values({ businessId: a, name: "Test location", timezone: "PST" });
@@ -123,6 +138,8 @@ test("AgentFlow schema and tenant boundaries", async (t) => {
       if (seeded) await client.begin(async (tx) => {
         for (const business of businesses) {
           await tx`SELECT set_config('agentflow.business_id', ${business}, true)`;
+          await tx`DELETE FROM knowledge_documents WHERE id = ${otherCatalogue} AND business_id = ${business}`;
+          await tx`DELETE FROM agents WHERE id = ${ownAgent} AND business_id = ${business}`;
           await tx`DELETE FROM role_permissions WHERE business_id = ${business}`;
           await tx`DELETE FROM business_memberships WHERE business_id = ${business}`;
           await tx`DELETE FROM customers WHERE business_id = ${business}`;

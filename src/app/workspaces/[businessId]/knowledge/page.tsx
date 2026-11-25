@@ -8,7 +8,12 @@ import { asAssistantManager } from "../assistant/store";
 import { saveFact } from "./actions";
 import { latestFacts } from "./library";
 
+import { Catalogues, catalogueView } from "./catalogues";
+
 const notices = new Map([
+  ["invalidCatalogue", "Check the product rows and catalogue name. Each row needs a unique SKU, name and description separated by tabs."],
+  ["catalogueSaved", "Catalogue imported with access disabled for all assistants."],
+  ["catalogueUpdated", "Catalogue access updated."],
   ["saved", "Changes saved."],
   ["faqSaved", "FAQ added."],
   ["retired", "Source retired."],
@@ -28,7 +33,8 @@ async function Library({ params, searchParams }: Props) {
   const { businessId } = await params;
   const { notice } = await searchParams;
   const message = typeof notice === "string" && notices.get(notice);
-  const { facts, releases, drafts } = await asAssistantManager(businessId, async ({ tx }) => {
+  const { facts, releases, drafts, catalogues } = await asAssistantManager(businessId, async (context) => {
+    const { tx } = context;
     const facts = await latestFacts(tx, businessId);
     const releases = await tx.execute<{ id: string; name: string; version: number; key: string; revision: string }>(sql`
       select a.id,a.name,c.version,source->'shared'->>'key' as key,source->'shared'->>'revision' as revision
@@ -47,7 +53,7 @@ async function Library({ params, searchParams }: Props) {
       where k.business_id=${businessId} and d.library_key is not null
         and (not a.active or c.version is distinct from a.published_version)
       order by name,a.id`);
-    return { facts, releases, drafts };
+    return { facts, releases, drafts, catalogues: await catalogueView(context, businessId) };
   }).catch(error => {
     if (error instanceof TenantAccessDenied) notFound();
     throw error;
@@ -55,10 +61,11 @@ async function Library({ params, searchParams }: Props) {
   return <main className="assistant-studio">
     <Link href={`/dashboard?businessId=${businessId}`}>Workspace overview</Link>
     <h1>Business Connect</h1>
+    {message && <p role="status">{message}</p>}
+    <Catalogues business={businessId} data={catalogues}/>
     <h2>Shared knowledge</h2>
     <p>Write business facts and answers to common questions, then assign them to your assistants.</p>
     <Link href={`/workspaces/${businessId}/assistant`}>AI assistants</Link>
-    {message && <p role="status">{message}</p>}
     <section><h2>Add a fact</h2><form action={saveFact.bind(null, businessId, randomUUID(), 0)}>
       <Fields /><button>Add fact</button></form></section>
     <details><summary>Add an FAQ</summary>

@@ -88,6 +88,7 @@ async function Studio({ params, searchParams }: Props) {
         ))}
       </nav>
       <div className="workbench-content">
+      {query.conversationChanged && <p role="alert">The conversation or assistant access changed while sending. Review the conversation and send your message again.</p>}
       {query.knowledgeChanged && <p role="alert">The draft or its shared knowledge changed. Review the sources before saving or publishing again.</p>}
       {current && (
         <p>

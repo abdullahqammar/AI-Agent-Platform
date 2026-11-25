@@ -5,6 +5,7 @@ import { z } from "zod";
 import { assistantConfig } from "@/lib/assistant/config";
 import { generateAnswer, LocalProviderError, ProviderCreditsExhausted } from "@/lib/assistant/provider";
 import { messages } from "@/db/schema";
+import type { CatalogueMatch } from "@/lib/assistant/catalogue";
 import { assignableFacts } from "../knowledge/library";
 import { asAssistantManager } from "./store";
 
@@ -145,7 +146,7 @@ export async function act(business: string, form: FormData) {
       .max(3000)
       .parse(form.get("message"));
     const context = await tx.execute<{ direction: string; body: string }>(
-      sql`select direction,body from messages where conversation_id=${thread} order by occurred_at desc,id desc limit 12`,
+      sql`select direction,body from messages where conversation_id=${thread} and access_generation=${Number(current.access_generation)} order by occurred_at desc,id desc limit 12`,
     );
     const append = (
       direction: "inbound" | "outbound",
@@ -157,13 +158,22 @@ export async function act(business: string, form: FormData) {
         businessId: business,
         conversationId: String(conversation.id),
         channelId: String(conversation.channel_id),
-        direction, body, usage, knowledgeIndexes,
+        direction, body, usage, knowledgeIndexes, accessGeneration: Number(current.access_generation),
         occurredAt: sql`clock_timestamp()`,
       });
     await append("inbound", message, null);
+    const catalogue = await tx.execute<CatalogueMatch>(sql`select item->>'sku' as sku,item->>'name' as name,
+      item->>'description' as description,d.title as source,d.processed_at::text as imported
+      from agent_knowledge k join knowledge_documents d on d.id=k.document_id and d.business_id=k.business_id
+      cross join lateral jsonb_array_elements(d.catalogue_items) item
+      cross join lateral (select count(*) as matches from unnest(tsvector_to_array(to_tsvector('english',${message}))) token
+        where token=any(tsvector_to_array(to_tsvector('english',concat_ws(' ',item->>'sku',item->>'name',item->>'description'))))) score
+      where k.business_id=${business} and k.agent_id=${agent} and d.source_ref='catalogue-import'
+        and d.disconnected_at is null and (score.matches>0 or lower(item->>'sku')=lower(${message}))
+      order by (lower(item->>'sku')=lower(${message})) desc, score.matches desc,d.id,item->>'sku' limit 4`);
     let result;
     try {
-      result = await generateAnswer(config, [...context].reverse(), message);
+      result = await generateAnswer(config, [...context].reverse(), message, undefined, undefined, catalogue);
     } catch (error) {
       notice = error instanceof ProviderCreditsExhausted ? "billing" : error instanceof LocalProviderError ? error.reason : "unavailable";
       await audit(notice === "billing" ? "assistant.provider.quota_exhausted" : "assistant.provider.failed", thread);
@@ -182,14 +192,15 @@ export async function act(business: string, form: FormData) {
     }
   }).catch((error: unknown) => {
     const conflict = z.object({ code: z.literal("40001") });
-    if (!["save", "publish"].includes(action) || !(conflict.safeParse(error).success || conflict.safeParse(error instanceof Error && error.cause).success)) throw error;
+    if (!["save", "publish", "send"].includes(action) || !(conflict.safeParse(error).success || conflict.safeParse(error instanceof Error && error.cause).success)) throw error;
     agent = z.uuid().nullable().parse(form.get("agent"));
-    notice = "knowledgeChanged";
+    notice = action === "send" ? "conversationChanged" : "knowledgeChanged";
   });
   const params = new URLSearchParams();
   if (agent) params.set("agent", agent);
   if (thread) params.set("thread", thread);
   if (notice === "knowledgeChanged") params.set("knowledgeChanged", "1");
+  else if (notice === "conversationChanged") params.set("conversationChanged", "1");
   else if (notice) params.set("providerError", notice);
   redirect(`/workspaces/${business}/assistant?${params}`);
 }

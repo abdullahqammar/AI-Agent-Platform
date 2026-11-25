@@ -71,6 +71,13 @@
       "when": 1795522801399,
       "tag": "0009_retire_workspace_facts",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1795546548907,
+      "tag": "0010_catalogue_access",
+      "breakpoints": true
     }
   ]
 }
